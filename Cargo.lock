@@ -350,6 +350,8 @@ dependencies = [
  "cipher",
  "diesel 2.1.6",
  "fungus_client",
+ "fungus_login",
+ "tokio",
 ]
 
 [[package]]

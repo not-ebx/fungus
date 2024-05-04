@@ -14,7 +14,7 @@ pub enum InHeader {
     WorldStatusRequest = 6,
     EULA = 7,
 
-
+    CLIENT_START = 36,
 
     WorldInfoRequest = 11,
     UNKNOWN = -1

@@ -29,6 +29,7 @@ pub fn handle_check_login_auth_info(in_packet: &mut InPacket) -> Result<(), Pack
                 },
                 Err(e_2) => {
                     // Create user, autoregister
+                    info!("Username {} doesn't exists. Auto registering :)", &username);
                     let auto_reg = insert_new_user(username.clone(), password.clone()).unwrap();
                     if auto_reg > 0 {
                         let user_result = get_login_user(

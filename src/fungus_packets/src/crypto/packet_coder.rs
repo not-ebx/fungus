@@ -37,12 +37,12 @@ impl PacketCoder {
 
         let mut data_clone = data.clone();
         self.cipher.crypt(&mut data_clone, &iv);
-        self.cipher.get_new_siv();
+        self.cipher.set_new_siv();
 
         let header_short = LittleEndian::read_i16(&header_bytes);
         let mut encoded_packet = OutPacket::default();
         encoded_packet.write_short(header_short);
-
+        encoded_packet.write_bytes(&data_clone);
         encoded_packet.as_bytes()
     }
 
@@ -52,11 +52,11 @@ impl PacketCoder {
         let crypted_len = data[0..4].iter().as_slice().read_i32::<BigEndian>().expect("NOT WTF");
         let buf_len = self.cipher.get_length(crypted_len);
 
-        let mut decrypt_packet: Vec<u8> = data[4..buf_len].iter().as_slice().to_vec();
+        let mut decrypt_packet: Vec<u8> = data[4..4+buf_len].iter().as_slice().to_vec();
         self.cipher.crypt(&mut decrypt_packet, &iv);
-        self.cipher.get_new_riv();
+        self.cipher.set_new_riv();
 
-        //self.cipher.decrypt_shanda(&mut decrypt_packet);
+        self.cipher.decrypt_shanda(&mut decrypt_packet);
 
         let in_packet = InPacket::new(&decrypt_packet);
         info!("{}", in_packet);

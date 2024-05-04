@@ -41,6 +41,10 @@ impl InPacket {
         LittleEndian::read_i16(opcode_bytes)
     }
 
+    pub fn get_header(&self) -> InHeader {
+        self.opcode.clone()
+    }
+
     fn write_opcode(&self) {
     }
 

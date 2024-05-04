@@ -15,8 +15,8 @@ pub fn on_send_connect(siv: &[u8], riv: &[u8]) -> OutPacket {
     out_packet.write_short(14); // Size of packet
     out_packet.write_short(VERSION);
     out_packet.write_string(MINOR_VERSION);
-    out_packet.write_bytes(&siv.to_vec());
     out_packet.write_bytes(&riv.to_vec());
+    out_packet.write_bytes(&siv.to_vec());
     out_packet.write_byte(LOCALE);
 
     out_packet

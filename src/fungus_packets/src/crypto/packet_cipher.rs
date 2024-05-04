@@ -1,9 +1,12 @@
 use std::io::Read;
 use aes::{Aes128, Aes256};
 use aes::cipher::{BlockEncrypt, Key, KeyInit, StreamCipherCoreWrapper};
+use aes::cipher::generic_array::GenericArray;
 use ofb::cipher::{KeyIvInit, StreamCipher};
 use ofb::{Ofb, OfbCore};
 use fungus_utils::constants::server_constants::VERSION;
+
+const BLOCK_SIZE: usize = 1460;
 
 const AES_KEY: [u8; 32] = [
     0x13, 0x00, 0x00, 0x00,
@@ -67,7 +70,7 @@ impl PacketCipher {
         ).expect("send ded");
 
         let mut new_riv = [0u8; 16];
-        new_riv[..4].copy_from_slice(&siv);
+        new_riv[..4].copy_from_slice(&riv);
         for i in 4..16 {
             new_riv[i] = riv[i%4];
         }
@@ -87,46 +90,38 @@ impl PacketCipher {
         }
     }
 
-    fn aes_crypt(&mut self, bytes: &mut [u8], iv: &[u8]) {
-        let mut send_cipher = Ofb::<Aes256>::new_from_slices(
-            &AES_KEY,
-            &iv
-        ).expect("recv ded");
-        send_cipher.apply_keystream(bytes);
-    }
-
-    fn multiply_bytes(iv: &[u8], i: usize, i0: usize) -> Vec<u8> {
-        let mut ret = vec![0u8; i * i0];
-        for x in 0..ret.len() {
-            ret[x] = iv[x % i];
-        }
-        ret
-    }
 
     // delta => Data
     // gamma => iv
-    pub fn crypt(&mut self, data: &mut [u8], iv: &[u8]) {
-        let mut remaining: i32 = data.len() as i32;
-        let mut length = 0x5B0;
-        let mut start = 0;
+    pub fn crypt(&mut self, buffer: &mut [u8], iv: &[u8]) {
+        let mut cur_pos: usize = 0;
+        let buf_size = buffer.len();
+        let mut step = if BLOCK_SIZE > buf_size {
+            buf_size
+        } else {
+            BLOCK_SIZE
+        };
+
+        let mut remaining = buf_size;
 
         while remaining > 0 {
-            let mut myIv = Self::multiply_bytes(iv, 4, 4);
-            if remaining < length {
-                length = remaining;
-            }
+            let mut aes_ofb = Ofb::<Aes256>::new_from_slices(
+                &AES_KEY,
+                iv
+            ).expect("Could not create encrypt stream wtf?");
 
-            for e in start..(start+length) {
-                if (e-start) % myIv.len() as i32 == 0 {
-                    self.aes_crypt(&mut myIv, iv);
-                }
-                data[e as usize] ^= myIv[((e - start) % myIv.len() as i32) as usize];
-            }
+            aes_ofb.apply_keystream(&mut buffer[cur_pos..cur_pos+step]);
 
-            // Block?
-            start += length;
-            remaining -= length;
-            length = 0x5B4;
+            // Move current position and remaining
+            cur_pos += step;
+            remaining -= step;
+
+            step = if BLOCK_SIZE > remaining {
+                remaining
+            } else {
+                BLOCK_SIZE
+            };
+
         }
     }
 
@@ -160,14 +155,14 @@ impl PacketCipher {
         self.check_packet(&a, gamma, r_version)
     }
 
-    pub fn get_new_siv(&mut self) {
+    pub fn set_new_siv(&mut self) {
         let mut send_iv = self.send_iv.clone();
         self.get_new_iv(&mut send_iv, &SHUFFLE_BYTES);
 
         self.send_iv= send_iv;
     }
 
-    pub fn get_new_riv(&mut self) {
+    pub fn set_new_riv(&mut self) {
         let mut recv_iv = self.recv_iv.clone();
         self.get_new_iv(&mut recv_iv, &SHUFFLE_BYTES);
 
@@ -195,6 +190,9 @@ impl PacketCipher {
         }
         for i in 0..4 {
             delta[i] = n_iv[i];
+        }
+        for i in 4..16 {
+            delta[i] = delta[i%4];
         }
     }
 
