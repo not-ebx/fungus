@@ -1,0 +1,15 @@
+[package]
+name = "fungus_login"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fungus_client = { path = "../fungus_client" }
+fungus_packets = { path = "../fungus_packets" }
+fungus_database = { path = "../fungus_database" }
+fungus_utils = { path = "../fungus_utils" }
+log = "0.4.21"
+tokio = { version = "1.37.0", features = ["full"] }
+env_logger = "0.11.3"

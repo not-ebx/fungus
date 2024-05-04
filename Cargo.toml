@@ -1,0 +1,13 @@
+workspace = { members = [ "src/fungus_client", "src/fungus_database", "src/fungus_loader", "src/fungus_login","src/fungus_packets", "src/fungus_utils", "src/fungus_world"] }
+[package]
+name = "fungus"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fungus_client = { path = "src/fungus_client" }
+diesel = "2.1.6"
+aes = "0.8.4"
+cipher = {  version = "0.4.4", features = ["block-padding"]}

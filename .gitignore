@@ -1,0 +1,5 @@
+/target
+.idea
+src/fungus_database/.env
+.DS_store
+.DS_Store
