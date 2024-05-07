@@ -1,4 +1,4 @@
-workspace = { members = [ "src/fungus_client", "src/fungus_database", "src/fungus_loader", "src/fungus_login","src/fungus_packets", "src/fungus_utils", "src/fungus_world"] }
+workspace = { members = [ "src/fungus_client", "src/fungus_database", "src/fungus_loader", "src/fungus_login", "src/fungus_net","src/fungus_packet_utils", "src/fungus_packets", "src/fungus_server", "src/fungus_session", "src/fungus_utils", "src/fungus_world"] }
 [package]
 name = "fungus"
 version = "0.1.0"
@@ -7,7 +7,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fungus_client = { path = "src/fungus_client" }
 fungus_login = { path = "src/fungus_login" }
 tokio = { version = "1.37.0", features = ["full"]}
 diesel = "2.1.6"

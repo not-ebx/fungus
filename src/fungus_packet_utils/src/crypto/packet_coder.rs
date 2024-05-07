@@ -1,12 +1,22 @@
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 use log::info;
+use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
 use crate::crypto::packet_cipher::PacketCipher;
 use crate::in_packet::InPacket;
-use crate::out_headers::OutHeader;
 use crate::out_packet::OutPacket;
 
 pub struct PacketCoder {
     cipher: PacketCipher
+}
+
+impl Default for PacketCoder {
+    fn default() -> Self {
+        PacketCoder {
+            cipher: PacketCipher::new(
+                DEFAULT_SIV.clone(), DEFAULT_RIV.clone()
+            )
+        }
+    }
 }
 
 impl PacketCoder {
@@ -24,7 +34,7 @@ impl PacketCoder {
         self.cipher.send_iv.clone()
     }
 
-    pub fn encode(&mut self, packet: &OutPacket) -> Vec<u8> {
+    pub fn encode(&mut self, packet: &OutPacket) -> OutPacket {
         // TODO Need to lock this probably, to avoid
         // problems when encoding/decoding, because the ivs will change.
         info!("{}", packet);
@@ -43,7 +53,7 @@ impl PacketCoder {
         let mut encoded_packet = OutPacket::default();
         encoded_packet.write_short(header_short);
         encoded_packet.write_bytes(&data_clone);
-        encoded_packet.as_bytes()
+        encoded_packet
     }
 
     pub fn decode(&mut self, data: &[u8]) -> InPacket {

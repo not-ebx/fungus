@@ -32,7 +32,7 @@ impl InPacket {
         InPacket{
             packet: packet.to_vec(),
             opcode: InHeader::from(opcode_short),
-            cursor: 0
+            cursor: 2
         }
     }
 

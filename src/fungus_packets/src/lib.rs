@@ -1,9 +1,6 @@
-pub mod out_packet;
-pub mod in_headers;
-pub mod out_headers;
-pub mod in_packet;
-pub mod packet_errors;
-pub mod crypto;
+pub mod login_packets;
+pub mod operation_handler;
+pub mod session;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right

@@ -1,18 +1,17 @@
 [package]
-name = "fungus_login"
+name = "fungus_session"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fungus_session = { path = "../fungus_session" }
-fungus_net = { path = "../fungus_net" }
-fungus_client = { path = "../fungus_client" }
 fungus_packet_utils = { path = "../fungus_packet_utils" }
-fungus_packets = { path = "../fungus_packets" }
-fungus_database = { path = "../fungus_database" }
 fungus_utils = { path = "../fungus_utils" }
-log = "0.4.21"
+fungus_net = { path = "../fungus_net" }
 tokio = { version = "1.37.0", features = ["full"] }
-env_logger = "0.11.3"
+uuid = { version = "1.8.0", features = ["v4"] }
+log = "0.4.21"
+aes = "0.8.4"
+ofb = "0.6.1"
+byteorder = "1.5.0"

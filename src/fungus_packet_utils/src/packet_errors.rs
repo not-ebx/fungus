@@ -6,6 +6,7 @@ pub enum PacketError {
     OutOfBounds,
     UnhandledHeader(String),
     UnknownHeader(String),
+    UnimplementedPacket(String),
     InvalidUtf8(Utf8Error),
     InvalidCipher(),
 }
@@ -24,6 +25,9 @@ impl fmt::Display for PacketError {
             }
             PacketError::InvalidUtf8(value) => {
                 write!(f, "Error: Invalid utf8 string ({})", value)
+            }
+            PacketError::UnimplementedPacket(value) => {
+                write!(f, "Error: The packet is not implemented ({})", value)
             }
             _ => {
                 write!(f, "Unhandled Error happened :(")

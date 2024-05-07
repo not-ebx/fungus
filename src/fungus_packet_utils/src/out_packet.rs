@@ -2,8 +2,10 @@ use core::fmt;
 use std::fmt::Formatter;
 use std::io;
 use std::io::Write;
+use std::time::SystemTime;
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 use log::info;
+use fungus_utils::traits::encodable::Encodable;
 use crate::out_headers::OutHeader;
 
 pub struct OutPacket {
@@ -51,6 +53,14 @@ impl OutPacket {
         LittleEndian::read_i16(opcode_bytes)
     }
 
+    pub fn write<T: Encodable>(&mut self, value: T) {
+        self.write_bytes(value.encode().as_slice());
+    }
+
+    pub fn write_bool(&mut self, value: bool) {
+        self.packet.push(value as u8);
+    }
+
     pub fn write_byte(&mut self, value: u8) {
         self.packet.push(value);
     }
@@ -70,7 +80,7 @@ impl OutPacket {
         self.packet.extend_from_slice(&value_bytes);
     }
 
-    pub fn write_string(&mut self, value: &str) {
+    pub fn write_string(&mut self, value: String) {
         let length_bytes = value.len() as u16;
         // TODO check that the length is more than max short size.
         let str_bytes : &[u8] = value.as_bytes();
@@ -79,7 +89,7 @@ impl OutPacket {
         let res = self.packet.write_all(&str_bytes);
     }
 
-    pub fn write_bytes(&mut self, value: &Vec<u8>) {
+    pub fn write_bytes(&mut self, value: &[u8]) {
         self.packet.extend_from_slice(value);
     }
 
