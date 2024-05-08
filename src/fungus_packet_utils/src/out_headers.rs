@@ -1,7 +1,7 @@
+use crate::in_headers::InHeader;
 use std::fmt;
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, Display, EnumIter};
-use crate::in_headers::InHeader;
 
 #[repr(i16)]
 #[derive(Display, EnumIter, AsRefStr, PartialEq, Eq, Debug, Clone, Copy)]
@@ -25,7 +25,9 @@ pub enum OutHeader {
 
 impl From<i16> for OutHeader {
     fn from(value: i16) -> OutHeader {
-        OutHeader::iter().find(|&x| x as i16 == value).unwrap_or(OutHeader::UNKNOWN)
+        OutHeader::iter()
+            .find(|&x| x as i16 == value)
+            .unwrap_or(OutHeader::UNKNOWN)
     }
 }
 

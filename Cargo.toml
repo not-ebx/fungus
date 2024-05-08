@@ -1,4 +1,4 @@
-workspace = { members = [ "src/fungus_client", "src/fungus_database", "src/fungus_loader", "src/fungus_login", "src/fungus_net","src/fungus_packet_utils", "src/fungus_packets", "src/fungus_server", "src/fungus_session", "src/fungus_utils", "src/fungus_world"] }
+workspace = { members = [ "src/fungus_database", "src/fungus_loader", "src/fungus_login", "src/fungus_net","src/fungus_packet_utils", "src/fungus_server",  "src/fungus_utils", "src/fungus_world"] }
 [package]
 name = "fungus"
 version = "0.1.0"

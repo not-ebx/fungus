@@ -6,11 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fungus_session = { path = "../fungus_session" }
 fungus_net = { path = "../fungus_net" }
-fungus_client = { path = "../fungus_client" }
 fungus_packet_utils = { path = "../fungus_packet_utils" }
-fungus_packets = { path = "../fungus_packets" }
 fungus_database = { path = "../fungus_database" }
 fungus_utils = { path = "../fungus_utils" }
 log = "0.4.21"

@@ -1,9 +1,11 @@
 use fungus_database::models::user::User;
 use fungus_database::schema::users::{account_type, password};
-use fungus_utils::constants::server_constants::{ALLOW_AUTO_REGISTER, LOCALE, MINOR_VERSION, VERSION};
-use fungus_utils::enums::login_type::LoginType;
 use fungus_packet_utils::out_headers::OutHeader;
 use fungus_packet_utils::out_packet::OutPacket;
+use fungus_utils::constants::server_constants::{
+    ALLOW_AUTO_REGISTER, LOCALE, MINOR_VERSION, VERSION,
+};
+use fungus_utils::enums::login_type::LoginType;
 use fungus_utils::types::fungus_time::FungusTime;
 use rand::{Rng, RngCore};
 
@@ -25,7 +27,7 @@ pub fn on_send_connect(siv: &[u8], riv: &[u8]) -> OutPacket {
     out_packet
 }
 
-pub fn on_check_password_result(user: Option<User>, success_code: LoginType, ) -> OutPacket {
+pub fn on_check_password_result(user: Option<User>, success_code: LoginType) -> OutPacket {
     match success_code {
         LoginType::Success => {
             let found_user = user.unwrap();
@@ -51,13 +53,13 @@ pub fn on_check_password_result(user: Option<User>, success_code: LoginType, ) -
         LoginType::AlreadyConnected => {}
         LoginType::NotConnectableWorld => {}
          */
-        _ => {OutPacket::default()}
+        _ => OutPacket::default(),
     }
 }
 
 // This has to own the user.
 pub fn on_success_login(user: User) -> OutPacket {
-    let mut out_packet: OutPacket= OutPacket::new(OutHeader::CheckPasswordResult);
+    let mut out_packet: OutPacket = OutPacket::new(OutHeader::CheckPasswordResult);
 
     // A byte idk
     // Success code
@@ -79,9 +81,7 @@ pub fn on_success_login(user: User) -> OutPacket {
     // Get the time
     let ms_time = FungusTime::from(user.created_at.clone());
 
-    out_packet.write(
-        ms_time
-    );
+    out_packet.write(ms_time);
 
     // Something to select the world
     out_packet.write_int(4);
@@ -92,5 +92,4 @@ pub fn on_success_login(user: User) -> OutPacket {
     out_packet.write_long(rng.next_u64() as i64); // TODO gotta create a randomizer :)
 
     out_packet
-
 }

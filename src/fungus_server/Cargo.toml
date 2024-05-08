@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 fungus_login = { path = "../fungus_login" }
-fungus_session = { path = "../fungus_session" }
 fungus_utils = { path = "../fungus_utils" }
 log = "0.4.21"
 tokio = { version = "1.37.0", features = ["full"] }

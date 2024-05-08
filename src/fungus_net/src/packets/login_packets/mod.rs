@@ -1,2 +1,2 @@
-pub mod login_packets;
 pub mod handlers;
+pub mod login_packets;

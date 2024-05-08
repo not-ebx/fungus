@@ -1,103 +1,129 @@
 use std::sync::Arc;
+use std::time::Duration;
 use log::{error, info};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpStream;
-use tokio::sync::mpsc::{Receiver, Sender};
-use tokio::sync::{Mutex, RwLock};
-use tokio::sync::mpsc::error::SendError;
 use fungus_packet_utils::crypto::packet_coder::PacketCoder;
 use fungus_packet_utils::in_packet::InPacket;
 use fungus_packet_utils::out_packet::OutPacket;
-use fungus_utils::constants::server_constants::MAX_PACKET_SIZE;
+use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::Mutex;
+use tokio::time;
+use tokio::time::Instant;
+use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
+use crate::packets::login_packets::login_packets::{on_send_connect, on_send_ping};
+use crate::packets::operation_handler::handle_packet;
+use crate::session::client_session::ClientSession;
 
 pub struct ClientChannel {
-    sender: Sender<InPacket>,
-    receiver: Receiver<OutPacket>,
-    packet_decoder: Mutex<PacketCoder>,
-    packet_encoder: Mutex<PacketCoder>,
+    pub receiver: Receiver<Vec<u8>>,
+    pub sender: Sender<OutPacket>,
+    pub packet_decoder: Mutex<PacketCoder>,
+    pub packet_encoder: Mutex<PacketCoder>,
 }
 
 impl ClientChannel {
-    pub fn new(sender: Sender<InPacket>, receiver: Receiver<OutPacket>) -> Self {
+    pub fn new(receiver: Receiver<Vec<u8>>, sender: Sender<OutPacket>) -> Self {
         ClientChannel {
-            sender,
             receiver,
-            packet_decoder: Mutex::from(PacketCoder::default()),
-            packet_encoder: Mutex::from(PacketCoder::default()),
+            sender,
+            packet_decoder: Mutex::new(Default::default()),
+            packet_encoder: Mutex::new(Default::default()),
         }
     }
 
-    pub async fn get_riv(&self) -> [u8; 16] {
-        self.packet_decoder.lock().await.get_riv()
-    }
+    pub async fn handle_inbound(&mut self, mut client_session: Arc<Mutex<ClientSession>>) {
+        {
+            let session_guard = client_session.lock().await;
+            info!("{}", session_guard);
+            self.sender.send(
+                on_send_connect(
+                    &DEFAULT_SIV,
+                    &DEFAULT_RIV
+                )
+            ).await.expect("Failed to send connect packet");
+            info!("Sent handshake to client, creating ping task too.");
+        }
 
-    pub async fn get_siv(&self) -> [u8; 16] {
-        self.packet_decoder.lock().await.get_siv()
-    }
+        let mut interval = time::interval_at(Instant::now() + Duration::from_secs(10), Duration::from_secs(10));
 
-    pub async fn channel_handler(client_channel: Arc<RwLock<ClientChannel>>, handshake_packet: OutPacket, mut socket: TcpStream) {
-        let mut buf = [0u8; MAX_PACKET_SIZE];
-        // Create the handshake
-        info!("Sent handshake~");
-        socket.write_all(
-            &*handshake_packet.as_bytes()
-        ).await.expect("Could NOT send handshake.");
         loop {
-            let buf_size = {
-                socket.read(&mut buf).await
-            };
-            match buf_size {
-                Ok(0) => {
-                    // Dead?
-                    info!("Idk if deead or what lol");
-                    break;
-                }
-                Ok(size) => {
-                    client_channel.write().await.send_in_packet(buf).await;
-                }
-                Err(_) => {}
-            }
-
-            let some_packet = {
-                client_channel.write().await.receiver.recv().await
-            };
-            match some_packet {
-                None => {
-                    error!("No packet..?");
-                    break;
-                }
-                Some(packet) => {
-                    let encoded_packet = {
-                        client_channel.write().await.encode_out(&packet)
-                    }.await;
-                    socket.write_all(
-                        &*encoded_packet.as_bytes()
-                    ).await.expect("TODO: panic message");
+            tokio::select! {
+                Some(packet) = self.receiver.recv() => {
+                    let mut decoder = self.packet_decoder.lock().await;
+                    let in_packet = decoder.decode(&packet);
+                    let mut session_guard = client_session.lock().await;
+                    match handle_packet(&mut session_guard, in_packet).await {
+                        Some(out_packet) => {
+                            // Encode the packet before sending it
+                            let encoded_packet = self.packet_encoder.lock().await.encode(&out_packet);
+                            if self.sender.send(encoded_packet).await.is_err() {
+                                error!("Channel send error, likely receiver has dropped.");
+                                break;
+                            }
+                        }
+                        None => {}
+                    }
+                },
+                _ = interval.tick() => {
+                    let encoded_packet = self.packet_encoder.lock().await.encode(&on_send_ping());
+                    if let Err(e) = self.sender.send(encoded_packet).await {
+                        println!("Failed to send ping: {}", e);
+                        break;
+                    }
                 }
             }
         }
     }
 
-    pub async fn encode_out(&mut self, out_packet: &OutPacket) -> OutPacket {
-        let mut decoder = self.packet_encoder.lock().await;
-        decoder.encode(out_packet)
-    }
-
-    pub async fn send_in_packet(&mut self, buf: [u8; 65535]) {
-        if buf.len() == 0 {
-            return;
+    /*
+    pub async fn handle_inbound(&mut self, mut client_session: Arc<Mutex<ClientSession>>) {
+        {
+            let session_guard = client_session.lock().await;
+            info!("{}", session_guard);
+            self.sender.send(
+                on_send_connect(
+                    &DEFAULT_SIV,
+                    &DEFAULT_RIV
+                )
+            ).await.expect("Nones");
+            info!("Sent handshake to client, creating ping task too.");
         }
 
-        let in_packet = {
+        while let Some(packet) = self.receiver.recv().await {
             let mut decoder = self.packet_decoder.lock().await;
-            decoder.decode(&buf[..buf.len()])
-        };
-
-
-        match self.sender.send(in_packet).await {
-            Ok(_) => {}
-            Err(e) => { error!("{}", e)}
+            // Assume `decode_packet` is an async function in `PacketCoder`
+            let in_packet = decoder.decode(&packet);
+            // TODO handle
+            let mut session_guard = client_session.lock().await;
+            match handle_packet(&mut session_guard, in_packet).await {
+                Some(out_packet) => {
+                    // Encode the packet before sending it
+                    let encoded_packet = self.packet_encoder.lock().await.encode(&out_packet);
+                    if self.sender.send(encoded_packet).await.is_err() {
+                        error!("Channel send error, likely receiver has dropped.");
+                        break;
+                    }
+                }
+                None => {}
+            }
         }
+    }
+
+    pub async fn send_alive_req(&mut self) {
+        let delay = Duration::from_millis(10000);
+        loop {
+            time::sleep(delay).await;
+            // encode packet and shit
+            let encoded_packet = self.packet_encoder.lock().await.encode(&on_send_ping());
+            if let Err(e) = self.sender.send(encoded_packet).await {
+                println!("Failed to send ping: {}", e);
+                break;
+            }
+
+
+        }
+    }
+    */
+    pub fn handle_outbound(&mut self, mut client_session: Arc<Mutex<ClientSession>>) {
 
     }
 }

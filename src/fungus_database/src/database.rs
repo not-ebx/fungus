@@ -18,5 +18,7 @@ static CONNECTION_POOL: Lazy<PgPool> = Lazy::new(|| {
 });
 
 pub fn get_db() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
-    CONNECTION_POOL.get().expect("Failed to get a connection from the pool")
+    CONNECTION_POOL
+        .get()
+        .expect("Failed to get a connection from the pool")
 }

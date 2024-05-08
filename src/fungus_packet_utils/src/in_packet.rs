@@ -1,12 +1,12 @@
-use core::fmt;
-use std::fmt::Formatter;
-use byteorder::{ByteOrder, LittleEndian};
 use crate::in_headers::InHeader;
 use crate::out_headers::OutHeader;
 use crate::out_packet::OutPacket;
 use crate::packet_errors::PacketError;
+use byteorder::{ByteOrder, LittleEndian};
+use core::fmt;
+use std::fmt::Formatter;
 
-pub struct InPacket{
+pub struct InPacket {
     opcode: InHeader,
     packet: Vec<u8>,
     cursor: usize,
@@ -20,7 +20,11 @@ impl fmt::Display for InPacket {
             self.opcode,
             self.get_opcode(),
             self.get_opcode(),
-            self.packet[2..].iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ")
+            self.packet[2..]
+                .iter()
+                .map(|b| format!("{:02X}", b))
+                .collect::<Vec<_>>()
+                .join(" ")
         )
     }
 }
@@ -29,10 +33,10 @@ impl InPacket {
     pub fn new(packet: &[u8]) -> Self {
         let opcode_short = LittleEndian::read_i16(&packet[0..2]);
 
-        InPacket{
+        InPacket {
             packet: packet.to_vec(),
             opcode: InHeader::from(opcode_short),
-            cursor: 2
+            cursor: 2,
         }
     }
 
@@ -45,14 +49,13 @@ impl InPacket {
         self.opcode.clone()
     }
 
-    fn write_opcode(&self) {
-    }
+    fn write_opcode(&self) {}
 
     pub fn read_byte(&mut self) -> Result<u8, PacketError> {
         if self.cursor + 1 >= self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
-            let bytes = self.packet[self.cursor..self.cursor+1].to_vec();
+            let bytes = self.packet[self.cursor..self.cursor + 1].to_vec();
             self.cursor += 1;
             Ok(bytes[0])
         }
@@ -62,7 +65,7 @@ impl InPacket {
         if self.cursor + 2 >= self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
-            let bytes = self.packet[self.cursor..self.cursor+2].to_vec();
+            let bytes = self.packet[self.cursor..self.cursor + 2].to_vec();
             self.cursor += 2;
             Ok(LittleEndian::read_i16(&bytes))
         }
@@ -72,7 +75,7 @@ impl InPacket {
         if self.cursor + 4 >= self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
-            let bytes = self.packet[self.cursor..self.cursor+2].to_vec();
+            let bytes = self.packet[self.cursor..self.cursor + 2].to_vec();
             self.cursor += 4;
             Ok(LittleEndian::read_i32(&bytes))
         }
@@ -82,7 +85,7 @@ impl InPacket {
         if self.cursor + 8 >= self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
-            let bytes = self.packet[self.cursor..self.cursor+2].to_vec();
+            let bytes = self.packet[self.cursor..self.cursor + 2].to_vec();
             self.cursor += 8;
             Ok(LittleEndian::read_i64(&bytes))
         }
@@ -93,7 +96,7 @@ impl InPacket {
         if self.cursor + str_length >= self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
-            let bytes = &self.packet[self.cursor..self.cursor+str_length];
+            let bytes = &self.packet[self.cursor..self.cursor + str_length];
             self.cursor += str_length;
             Ok(std::str::from_utf8(bytes).map_err(PacketError::InvalidUtf8)?)
         }
@@ -104,7 +107,7 @@ impl InPacket {
         if self.cursor + arr_size >= self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
-            let bytes = &self.packet[self.cursor..self.cursor+arr_size].to_vec();
+            let bytes = &self.packet[self.cursor..self.cursor + arr_size].to_vec();
             self.cursor += arr_size;
             *byte_array = bytes.clone();
             Ok(())

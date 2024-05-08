@@ -354,18 +354,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fungus_client"
-version = "0.1.0"
-dependencies = [
- "diesel 2.1.6",
- "dotenvy",
- "fungus_database",
- "log",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "fungus_database"
 version = "0.1.0"
 dependencies = [
@@ -393,12 +381,9 @@ name = "fungus_login"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "fungus_client",
  "fungus_database",
  "fungus_net",
  "fungus_packet_utils",
- "fungus_packets",
- "fungus_session",
  "fungus_utils",
  "log",
  "tokio",
@@ -409,12 +394,13 @@ name = "fungus_net"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "fungus_client",
  "fungus_database",
  "fungus_packet_utils",
  "fungus_utils",
  "log",
+ "rand",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -432,46 +418,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "fungus_packets"
-version = "0.1.0"
-dependencies = [
- "fungus_client",
- "fungus_database",
- "fungus_net",
- "fungus_packet_utils",
- "fungus_session",
- "fungus_utils",
- "log",
- "rand",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "fungus_server"
 version = "0.1.0"
 dependencies = [
  "env_logger",
  "fungus_login",
- "fungus_session",
  "fungus_utils",
  "log",
  "tokio",
-]
-
-[[package]]
-name = "fungus_session"
-version = "0.1.0"
-dependencies = [
- "aes",
- "byteorder",
- "fungus_net",
- "fungus_packet_utils",
- "fungus_utils",
- "log",
- "ofb",
- "tokio",
- "uuid",
 ]
 
 [[package]]

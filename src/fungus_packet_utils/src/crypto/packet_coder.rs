@@ -1,28 +1,26 @@
-use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
-use log::info;
-use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
 use crate::crypto::packet_cipher::PacketCipher;
 use crate::in_packet::InPacket;
 use crate::out_packet::OutPacket;
+use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
+use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
+use log::info;
 
 pub struct PacketCoder {
-    cipher: PacketCipher
+    cipher: PacketCipher,
 }
 
 impl Default for PacketCoder {
     fn default() -> Self {
         PacketCoder {
-            cipher: PacketCipher::new(
-                DEFAULT_SIV.clone(), DEFAULT_RIV.clone()
-            )
+            cipher: PacketCipher::new(DEFAULT_SIV.clone(), DEFAULT_RIV.clone()),
         }
     }
 }
 
 impl PacketCoder {
-    pub fn new(siv: [u8; 4], riv: [u8;4]) -> Self {
-        PacketCoder{
-            cipher: PacketCipher::new(siv, riv)
+    pub fn new(siv: [u8; 4], riv: [u8; 4]) -> Self {
+        PacketCoder {
+            cipher: PacketCipher::new(siv, riv),
         }
     }
 
@@ -59,10 +57,14 @@ impl PacketCoder {
     pub fn decode(&mut self, data: &[u8]) -> InPacket {
         let iv = self.get_riv();
         // Get packet length
-        let crypted_len = data[0..4].iter().as_slice().read_i32::<BigEndian>().expect("NOT WTF");
+        let crypted_len = data[0..4]
+            .iter()
+            .as_slice()
+            .read_i32::<BigEndian>()
+            .expect("NOT WTF");
         let buf_len = self.cipher.get_length(crypted_len);
 
-        let mut decrypt_packet: Vec<u8> = data[4..4+buf_len].iter().as_slice().to_vec();
+        let mut decrypt_packet: Vec<u8> = data[4..4 + buf_len].iter().as_slice().to_vec();
         self.cipher.crypt(&mut decrypt_packet, &iv);
         self.cipher.set_new_riv();
 

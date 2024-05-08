@@ -15,7 +15,10 @@ impl fmt::Display for PacketError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             PacketError::OutOfBounds => {
-                write!(f, "Error: Can't move cursor out of the bounds of the packet")
+                write!(
+                    f,
+                    "Error: Can't move cursor out of the bounds of the packet"
+                )
             }
             PacketError::UnhandledHeader(value) => {
                 write!(f, "Error: Unhandled Header {}", value)
