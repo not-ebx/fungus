@@ -9,15 +9,23 @@ use log::{info, warn};
 use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
 use tokio::sync::MutexGuard;
-use crate::packets::login_packets::handlers::login_handlers::handle_check_login_auth_info;
+use crate::packets::login_packets::handlers::login_handlers::{handle_check_login_auth_info, handle_world_list_request, handle_world_status_request};
 use crate::packets::login_packets::login_packets::on_send_connect;
 
 //pub async fn handle_packet(session: &mut ClientSession, mut packet: InPacket) {
-pub async fn handle_packet(session: &mut ClientSession, mut packet: InPacket) -> Option<OutPacket> {
+pub async fn handle_packet(session: &mut ClientSession, mut packet: InPacket) -> Result<(), PacketError> {
     let opcode = packet.get_header();
-    let packet = match opcode {
+    match opcode {
         //InHeader::BeginSocket => {}
-        InHeader::CheckLoginAuthInfo => handle_check_login_auth_info(session, &mut packet).await,
+        InHeader::CheckLoginAuthInfo => {
+            handle_check_login_auth_info(session, &mut packet).await
+        }
+        InHeader::WorldListRequest | InHeader::WorldInfoRequest | InHeader::RedisplayWorldList => {
+            handle_world_list_request(session, packet).await
+        }
+        InHeader::WorldStatusRequest => {
+            handle_world_status_request(session, &mut packet).await
+        }
         /*
         InHeader::GuestLogin => {}
         InHeader::SelectPreviousWorld => {}
@@ -27,16 +35,12 @@ pub async fn handle_packet(session: &mut ClientSession, mut packet: InPacket) ->
         InHeader::ClientStart=> {}
         InHeader::WorldInfoRequest => {}
          */
-        InHeader::VersionVerify => Ok(on_send_connect(&DEFAULT_SIV, &DEFAULT_RIV)),
+        InHeader::VersionVerify => {
+            session.send_packet(
+                &on_send_connect(&DEFAULT_SIV, &DEFAULT_RIV)
+            ).await
+        },
         //InHeader::UNKNOWN => {}
         _ => Err(PacketError::UnimplementedPacket(format!("{}", packet))),
-    };
-
-    match packet {
-        Ok(out_packet) => Some(out_packet),
-        Err(e) => {
-            warn!("{}", e);
-            None
-        }
     }
 }

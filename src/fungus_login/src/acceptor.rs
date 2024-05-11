@@ -9,12 +9,15 @@ use fungus_utils::constants::server_constants::{
 use log::{debug, error, info};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::tcp::{ReadHalf, WriteHalf};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, Mutex, RwLock};
-use tokio::task;
-use fungus_net::packets::login_packets::login_packets::on_send_connect;
+use tokio::sync::mpsc::Sender;
+use tokio::{task, time};
+use tokio::time::Instant;
+use fungus_net::packets::login_packets::login_packets::{on_send_connect};
 use fungus_net::packets::operation_handler::handle_packet;
 use fungus_net::session::client_session::ClientSession;
 
@@ -45,13 +48,13 @@ async fn read_packets(mut socket: tokio::io::ReadHalf<TcpStream>, tx: mpsc::Send
     }
 }
 
-async fn write_packets(mut socket: tokio::io::WriteHalf<TcpStream>, mut rx: mpsc::Receiver<OutPacket>) {
+async fn write_packets(mut socket: tokio::io::WriteHalf<TcpStream>, mut rx: mpsc::Receiver<Vec<u8>>) {
     loop {
         match rx.recv().await {
             None => {}
             Some(packet) => {
                 if let Err(e) = socket.write_all(
-                    packet.as_bytes().as_ref()
+                    packet.as_slice()
                 ).await {
                     error!("An error occurred trying to write the Outbound Packet: {}", e);
                     break;
@@ -89,18 +92,19 @@ impl LoginServer {
                             let (socket_read, socket_write) = tokio::io::split(socket);
 
                             // Outbound Channel
-                            let (send_out_packet, recv_out_packet) = mpsc::channel::<OutPacket>(32);
+                            let (send_out_packet, recv_out_packet) = mpsc::channel::<Vec<u8>>(32);
                             // Inbound Channel
                             let (send_in_packet, recv_in_packet) = mpsc::channel::<Vec<u8>>(32);
 
-                            let client_channel = Arc::new(Mutex::new(
-                                ClientChannel::new(recv_in_packet, send_out_packet)
+                            let client_channel = Arc::new(RwLock::new(
+                                ClientChannel::new(recv_in_packet)
                             ));
 
                             let client_session =
                                 Arc::new(Mutex::new(ClientSession::new(
                                     addr.to_string(),
-                                    client_channel.clone()
+                                    client_channel.clone(),
+                                    send_out_packet
                                 )));
 
                             info!(
@@ -119,7 +123,7 @@ impl LoginServer {
                             });
 
                             tokio::spawn(async move {
-                                client_channel.clone().lock().await.handle_inbound(
+                                client_channel.clone().write().await.handle_inbound(
                                     client_session.clone()
                                 ).await
                             });

@@ -20,7 +20,7 @@ impl Encodable for FungusTime {
         let mut as_bytes: [u8; 8] = [0;8];
         LittleEndian::write_i64(&mut as_bytes, as_long);
 
-        as_bytes[0..].to_vec()
+        as_bytes.to_vec()
     }
 }
 

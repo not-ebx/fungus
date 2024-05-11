@@ -8,6 +8,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex;
 use tokio::time;
 use tokio::time::Instant;
+use fungus_packet_utils::packet_errors::PacketError;
 use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
 use crate::packets::login_packets::login_packets::{on_send_connect, on_send_ping};
 use crate::packets::operation_handler::handle_packet;
@@ -15,32 +16,31 @@ use crate::session::client_session::ClientSession;
 
 pub struct ClientChannel {
     pub receiver: Receiver<Vec<u8>>,
-    pub sender: Sender<OutPacket>,
+    //pub sender: Sender<OutPacket>,
     pub packet_decoder: Mutex<PacketCoder>,
-    pub packet_encoder: Mutex<PacketCoder>,
+    //pub packet_encoder: Mutex<PacketCoder>,
 }
 
 impl ClientChannel {
-    pub fn new(receiver: Receiver<Vec<u8>>, sender: Sender<OutPacket>) -> Self {
+    pub fn new(receiver: Receiver<Vec<u8>>) -> Self {
         ClientChannel {
             receiver,
-            sender,
+            //sender,
             packet_decoder: Mutex::new(Default::default()),
-            packet_encoder: Mutex::new(Default::default()),
+            //packet_encoder: Mutex::new(Default::default()),
         }
     }
 
     pub async fn handle_inbound(&mut self, mut client_session: Arc<Mutex<ClientSession>>) {
         {
-            let session_guard = client_session.lock().await;
-            info!("{}", session_guard);
-            self.sender.send(
-                on_send_connect(
-                    &DEFAULT_SIV,
-                    &DEFAULT_RIV
-                )
-            ).await.expect("Failed to send connect packet");
-            info!("Sent handshake to client, creating ping task too.");
+            let handshake_result = client_session.lock().await.send_handshake().await;
+            match handshake_result {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("{}", e);
+                    return;
+                }
+            }
         }
 
         let mut interval = time::interval_at(Instant::now() + Duration::from_secs(10), Duration::from_secs(10));
@@ -48,26 +48,28 @@ impl ClientChannel {
         loop {
             tokio::select! {
                 Some(packet) = self.receiver.recv() => {
-                    let mut decoder = self.packet_decoder.lock().await;
-                    let in_packet = decoder.decode(&packet);
+                    let in_packet = {
+                        let mut decoder = self.packet_decoder.lock().await;
+                        decoder.decode(&packet)
+                    };
                     let mut session_guard = client_session.lock().await;
                     match handle_packet(&mut session_guard, in_packet).await {
-                        Some(out_packet) => {
-                            // Encode the packet before sending it
-                            let encoded_packet = self.packet_encoder.lock().await.encode(&out_packet);
-                            if self.sender.send(encoded_packet).await.is_err() {
-                                error!("Channel send error, likely receiver has dropped.");
-                                break;
-                            }
+                        Ok(_) => {
+                            info!("Successfully handled packet");
                         }
-                        None => {}
+                        Err(e) => {
+                            error!("{}", e);
+                        }
                     }
                 },
                 _ = interval.tick() => {
-                    let encoded_packet = self.packet_encoder.lock().await.encode(&on_send_ping());
-                    if let Err(e) = self.sender.send(encoded_packet).await {
-                        println!("Failed to send ping: {}", e);
-                        break;
+                    let mut session_guard = client_session.lock().await;
+                    match session_guard.send_packet(&on_send_ping()).await {
+                        Ok(_) => info!("Ping sent successfully."),
+                        Err(e) => {
+                            error!("Failed to send ping: {}", e);
+                            break;
+                        }
                     }
                 }
             }

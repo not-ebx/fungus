@@ -32,7 +32,7 @@ impl PacketCoder {
         self.cipher.send_iv.clone()
     }
 
-    pub fn encode(&mut self, packet: &OutPacket) -> OutPacket {
+    pub fn encode(&mut self, packet: &OutPacket) -> Vec<u8> {
         // TODO Need to lock this probably, to avoid
         // problems when encoding/decoding, because the ivs will change.
         info!("{}", packet);
@@ -47,11 +47,9 @@ impl PacketCoder {
         self.cipher.crypt(&mut data_clone, &iv);
         self.cipher.set_new_siv();
 
-        let header_short = LittleEndian::read_i16(&header_bytes);
-        let mut encoded_packet = OutPacket::default();
-        encoded_packet.write_short(header_short);
-        encoded_packet.write_bytes(&data_clone);
-        encoded_packet
+        let mut full_packet = Vec::from(header_bytes);
+        full_packet.extend_from_slice(data_clone.as_slice());
+        full_packet
     }
 
     pub fn decode(&mut self, data: &[u8]) -> InPacket {

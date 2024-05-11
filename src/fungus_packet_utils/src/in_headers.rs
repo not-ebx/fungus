@@ -7,16 +7,24 @@ use strum_macros::{AsRefStr, Display, EnumIter};
 #[derive(Display, EnumIter, AsRefStr, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum InHeader {
     BeginSocket = 0,
+
+    // OnLogin
+    CharSelect = 12,
     VersionVerify = 20,
     CheckLoginAuthInfo = 21,
     GuestLogin = 22,
 
-    SelectPreviousWorld = 4,
-    SelectWorld = 5,
-    WorldStatusRequest = 6,
+    SelectPreviousWorld = 24,
+    SelectWorld = 25,
+    WorldStatusRequest = 26,
+    WorldListRequest = 31,
+    RedisplayWorldList = 32,
     EULA = 7,
     WorldInfoRequest = 11,
+    Pong = 46,
     ClientStart = 56,
+    ClientError = 59,
+
     UNKNOWN = -1,
 }
 

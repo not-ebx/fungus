@@ -12,3 +12,5 @@ pub const DEFAULT_RIV: [u8;4] = [82,48,120,115];
 pub const MAX_PACKET_SIZE: usize = 65535;
 pub const ALLOW_AUTO_REGISTER: bool = true;
 pub const GAME_TICK: Duration = Duration::from_millis(50);
+pub const MAX_CHANNEL_CONNECTIONS: i32 = 500;
+pub const WORLD_CHANNELS: i32 = 3;

@@ -2,7 +2,7 @@ use crate::out_headers::OutHeader;
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 use core::fmt;
 use fungus_utils::traits::encodable::Encodable;
-use log::info;
+use log::{error, info};
 use std::fmt::Formatter;
 use std::io;
 use std::io::Write;
@@ -11,6 +11,25 @@ use std::time::SystemTime;
 pub struct OutPacket {
     pub opcode: OutHeader,
     pub packet: Vec<u8>,
+}
+
+impl From<Vec<u8>> for OutPacket {
+    fn from(value: Vec<u8>) -> Self {
+        let out_header = &value[0..2];
+        let packet_header = OutHeader::from(
+            LittleEndian::read_i16(out_header)
+        );
+        if packet_header.eq(&OutHeader::UNKNOWN) {
+            error!("OutPacket::from<Vec<u8>> MUST come from a KNOWN OutHeader. Returning empty outpacket.");
+            return OutPacket::default();
+        }
+
+        let mut out_packet = OutPacket::new(packet_header);
+        out_packet.write_bytes(&value[2..]);
+
+        out_packet
+
+    }
 }
 
 impl Default for OutPacket {
@@ -24,28 +43,25 @@ impl Default for OutPacket {
 
 impl fmt::Display for OutPacket {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let packet_slice = self.packet.get(2..).unwrap_or(&[]);
+        let packet_stringified = packet_slice
+            .iter()
+            .map(|b| format!("{:02X}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
+
         write!(
             f,
             "<= OUT [{} ({}|0x{:02X})] :: [ {} ]",
             self.opcode,
             self.get_opcode(),
             self.get_opcode(),
-            self.print_packet()
+            packet_stringified
         )
     }
 }
 
 impl OutPacket {
-    fn print_packet(&self) -> String {
-        let packet_slice = self.packet.get(2..).unwrap_or(&[]);
-
-        packet_slice
-            .iter()
-            .map(|b| format!("{:02X}", b))
-            .collect::<Vec<_>>()
-            .join(" ")
-    }
-
     pub fn new(header: OutHeader) -> Self {
         let opcode = header.clone();
         let mut packet_arr: Vec<u8> = Vec::new();
@@ -56,6 +72,11 @@ impl OutPacket {
             packet: packet_arr,
             opcode,
         }
+    }
+
+    pub fn from_encodable<T: Encodable>(value: T) -> Self {
+        let vec_packet = value.encode();
+        OutPacket::from(vec_packet)
     }
 
     fn get_opcode(&self) -> i16 {

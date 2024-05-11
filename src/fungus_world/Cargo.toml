@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+fungus_utils = { path = "../fungus_utils" }
+fungus_packet_utils = { path = "../fungus_packet_utils" }
+tokio = { version = "1.37.0", features = ["sync"] }

@@ -12,14 +12,21 @@ pub enum OutHeader {
     CheckUserLimitResult = 3,
     SetAccountResult = 4,
     ConfirmEULAResult = 5,
-    // ...
+    CheckPinResult = 6,
+    UpdatePinResult = 7,
+    VacResult = 8,
+    SelectByVACResult = 9,
     WorldInformation = 10,
     SelectWorldResult = 11,
-    //
-    //ClientStart = 14,
-    // .. More
+    SelectCharacterResult = 12,
+    CheckDuplicatedIdResult = 13,
+    CreateNewCharacterResult = 14,
+    DeleteCharacterResult = 15,
+    MigrateCommand = 16,
     AliveReq = 17,
     // .. more xd
+    LatestConnectedWorld = 27,
+    RecommendedWorldMessage = 28,
     UNKNOWN = -1,
 }
 

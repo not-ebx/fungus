@@ -1,3 +1,4 @@
+use std::future::Future;
 use fungus_database::models::user::User;
 use fungus_database::schema::users::{account_type, password};
 use fungus_packet_utils::out_headers::OutHeader;
@@ -8,6 +9,9 @@ use fungus_utils::constants::server_constants::{
 use fungus_utils::enums::login_type::LoginType;
 use fungus_utils::types::fungus_time::FungusTime;
 use rand::{Rng, RngCore};
+use fungus_utils::enums::server_status::ServerStatus;
+use fungus_world::world::World;
+use crate::server::server::SERVER_INSTANCE;
 
 pub fn on_send_ping() -> OutPacket {
     OutPacket::new(OutHeader::AliveReq)
@@ -27,22 +31,22 @@ pub fn on_send_connect(siv: &[u8], riv: &[u8]) -> OutPacket {
     out_packet
 }
 
-pub fn on_check_password_result(user: Option<User>, success_code: LoginType) -> OutPacket {
+pub fn on_check_password_result(user: Option<&User>, success_code: LoginType) -> Option<OutPacket> {
     match success_code {
         LoginType::Success => {
             let found_user = user.unwrap();
-            on_success_login(found_user)
+            Some(on_success_login(found_user))
         }
         LoginType::NotRegistered => {
             // Send not registered packet
             // TODO fix this lmao
-            on_send_ping()
+            None
         }
 
         LoginType::IncorrectPassword => {
             // Send not registered packet
             // TODO fix this lmao
-            on_send_ping()
+            None
         }
         /*
         LoginType::TempBlocked => {}
@@ -53,12 +57,12 @@ pub fn on_check_password_result(user: Option<User>, success_code: LoginType) -> 
         LoginType::AlreadyConnected => {}
         LoginType::NotConnectableWorld => {}
          */
-        _ => OutPacket::default(),
+        _ => None,
     }
 }
 
 // This has to own the user.
-pub fn on_success_login(user: User) -> OutPacket {
+pub fn on_success_login(user: &User) -> OutPacket {
     let mut out_packet: OutPacket = OutPacket::new(OutHeader::CheckPasswordResult);
 
     // A byte idk
@@ -72,7 +76,7 @@ pub fn on_success_login(user: User) -> OutPacket {
     out_packet.write_bool(user.account_type > 0); // Something about gm..?
     out_packet.write_short(0); // Gm level i think
     out_packet.write_bool(user.account_type > 0); // Something about admin account idk
-    out_packet.write_string(user.username);
+    out_packet.write_string(user.username.clone());
     out_packet.write_byte(3); // 3 for new accds .. ?
     out_packet.write_byte(0); // quiet ban
     out_packet.write_long(0); // quiet ban time
@@ -89,7 +93,47 @@ pub fn on_success_login(user: User) -> OutPacket {
     out_packet.write_byte(2); // Pic Disabled, 2
 
     let mut rng = rand::thread_rng();
-    out_packet.write_long(rng.next_u64() as i64); // TODO gotta create a randomizer :)
+    let random_long = rng.next_u64() as i64; // TODO gotta create a randomizer :)
+    out_packet.write_long(random_long);
 
+    out_packet
+}
+
+pub fn on_send_world_information_end() -> OutPacket{
+    let mut out_packet = OutPacket::new(OutHeader::WorldInformation);
+    out_packet.write_int(255);
+    out_packet
+}
+
+// TODO Implement this, for the meantime no message :)
+pub fn on_send_recommended_world_message(recommended_world_id: i32, message: String) -> OutPacket {
+    let mut out_packet = OutPacket::new(OutHeader::RecommendedWorldMessage);
+    out_packet.write_bool(message.len() > 0); // is message empty?
+    out_packet.write_int(recommended_world_id); // World id
+    out_packet.write_string(message);
+
+    out_packet
+}
+
+pub async fn on_send_world_status(world_id: i32) -> OutPacket {
+    let mut out_packet: OutPacket = OutPacket::new(OutHeader::CheckUserLimitResult);
+
+    let world_search = {
+        let server_instance = SERVER_INSTANCE.write().await;
+        let worlds_lock = server_instance.get_worlds();
+        let worlds = worlds_lock.read().await;
+        worlds.iter().find(|&w| w.id == world_id).cloned() // Assuming the data inside is cloneable
+    };
+
+    match world_search {
+        None => {
+            out_packet.write_byte(ServerStatus::Busy as u8);
+        }
+        Some(world) => {
+            out_packet.write_byte(world.get_status() as u8);
+        }
+    }
+
+    out_packet.write_byte(0);
     out_packet
 }

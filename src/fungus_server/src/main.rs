@@ -1,12 +1,25 @@
+use std::sync::Arc;
+use std::thread;
 use env_logger::Builder;
 use fungus_login::acceptor::LoginServer;
 use log::LevelFilter;
-use tokio::task;
+use tokio::runtime::Runtime;
+use tokio::sync::RwLock;
+use fungus_net::server::server::Server;
 
 #[tokio::main]
 async fn main() {
     Builder::new().filter(None, LevelFilter::Info).init();
-    let mut login_server = LoginServer::new();
 
-    let login_handler = tokio::spawn(async move { login_server.listen().await }).await;
+    let login_server = || async {
+        let mut login_server = LoginServer::new();
+        login_server.listen().await;
+    };
+
+    let login_handler = thread::spawn(move || {
+        let rt = Runtime::new().unwrap();
+        rt.block_on(login_server());
+    });
+
+    login_handler.join().unwrap();
 }

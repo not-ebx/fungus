@@ -9,6 +9,9 @@ pub enum PacketError {
     UnimplementedPacket(String),
     InvalidUtf8(Utf8Error),
     InvalidCipher(),
+
+    // High level errors..?
+    CommunicationError()
 }
 
 impl fmt::Display for PacketError {
@@ -31,6 +34,9 @@ impl fmt::Display for PacketError {
             }
             PacketError::UnimplementedPacket(value) => {
                 write!(f, "Error: The packet is not implemented ({})", value)
+            }
+            PacketError::CommunicationError() => {
+                write!(f, "Error: Could not send the packet")
             }
             _ => {
                 write!(f, "Unhandled Error happened :(")
