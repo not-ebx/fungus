@@ -1,2 +1,2 @@
 pub mod world;
-mod channel;
+pub mod channel;

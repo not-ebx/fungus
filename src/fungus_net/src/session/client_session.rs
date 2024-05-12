@@ -15,6 +15,7 @@ use fungus_packet_utils::in_packet::InPacket;
 use fungus_packet_utils::out_packet::OutPacket;
 use fungus_packet_utils::packet_errors::PacketError;
 use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
+use fungus_world::channel::Channel;
 use crate::channels::client_channel::ClientChannel;
 use crate::packets::login_packets::login_packets::on_send_connect;
 use crate::packets::operation_handler::handle_packet;
@@ -23,11 +24,13 @@ pub struct ClientSession {
     session_id: Uuid,
     pub ip: String,
     pub machine_id: String,
-    pub client_channel: Arc<RwLock<ClientChannel>>,
-    pub user: Option<User>,
-
+    client_channel: Arc<RwLock<ClientChannel>>,
     pub sender: Sender<Vec<u8>>,
     pub packet_encoder: Mutex<PacketCoder>,
+
+    // Game Stuff
+    pub channel: Option<Channel>,
+    pub user: Option<User>,
 }
 
 impl Display for ClientSession {

@@ -26,6 +26,9 @@ pub async fn handle_packet(session: &mut ClientSession, mut packet: InPacket) ->
         InHeader::WorldStatusRequest => {
             handle_world_status_request(session, &mut packet).await
         }
+        InHeader::SelectWorld => {
+
+        }
         /*
         InHeader::GuestLogin => {}
         InHeader::SelectPreviousWorld => {}

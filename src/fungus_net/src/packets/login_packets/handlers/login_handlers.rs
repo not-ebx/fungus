@@ -96,3 +96,9 @@ pub async fn handle_world_status_request(session: &mut ClientSession, in_packet:
 
     Ok(())
 }
+
+pub async fn handle_select_world(session: &mut ClientSession, in_packet: &mut InPacket) -> Result<(), PacketError> {
+
+
+    Ok(())
+}
