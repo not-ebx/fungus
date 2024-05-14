@@ -1,10 +1,10 @@
-use crate::in_headers::InHeader;
-use std::fmt;
+use std::collections::HashSet;
+use once_cell::sync::Lazy;
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, Display, EnumIter};
 
 #[repr(i16)]
-#[derive(Display, EnumIter, AsRefStr, PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(Display, EnumIter, AsRefStr, PartialEq, Eq, Debug, Clone, Copy, Hash)]
 pub enum OutHeader {
     CheckPasswordResult = 0,
     GuestIDLoginResult = 1,
@@ -30,6 +30,12 @@ pub enum OutHeader {
     UNKNOWN = -1,
 }
 
+static IGNORED_HEADERS: Lazy<HashSet<OutHeader>> = Lazy::new(||
+    HashSet::from([
+        OutHeader::AliveReq
+    ])
+);
+
 impl From<i16> for OutHeader {
     fn from(value: i16) -> OutHeader {
         OutHeader::iter()
@@ -45,5 +51,9 @@ impl OutHeader {
 
     pub fn to_i16(self) -> i16 {
         self as i16
+    }
+
+    pub fn is_ignored(&self) -> bool {
+        IGNORED_HEADERS.contains(self)
     }
 }

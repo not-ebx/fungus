@@ -35,7 +35,9 @@ impl PacketCoder {
     pub fn encode(&mut self, packet: &OutPacket) -> Vec<u8> {
         // TODO Need to lock this probably, to avoid
         // problems when encoding/decoding, because the ivs will change.
-        info!("{}", packet);
+        if !packet.opcode.clone().is_ignored() {
+            info!("{}", packet);
+        }
         let mut data = packet.get_bytes().to_vec();
         // Gotta get the client or something, wtf?
         let iv = self.get_siv();
@@ -69,7 +71,9 @@ impl PacketCoder {
         self.cipher.decrypt_shanda(&mut decrypt_packet);
 
         let in_packet = InPacket::new(&decrypt_packet);
-        info!("{}", in_packet);
+        if !in_packet.opcode.clone().is_ignored() {
+            info!("{}", in_packet);
+        }
         in_packet
     }
 }

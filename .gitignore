@@ -3,3 +3,5 @@
 src/fungus_database/.env
 .DS_store
 .DS_Store
+nx_files/
+nx_files/*.nx

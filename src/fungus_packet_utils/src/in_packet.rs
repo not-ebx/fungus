@@ -7,7 +7,7 @@ use core::fmt;
 use std::fmt::Formatter;
 
 pub struct InPacket {
-    opcode: InHeader,
+    pub(crate) opcode: InHeader,
     packet: Vec<u8>,
     cursor: usize,
 }

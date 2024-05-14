@@ -1,14 +1,12 @@
-use crate::database::get_db;
-use crate::schema::users::dsl::users;
-use crate::schema::users::{password, username};
+use std::str::FromStr;
 use argon2::Config;
 use chrono::{NaiveDate, NaiveDateTime};
-use diesel::insert_into;
-use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+use sqlx::{Error, FromRow};
+use crate::database::get_db;
+use crate::models::account::Account;
 
-#[derive(Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::users)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(Serialize, Deserialize, FromRow)]
 pub struct User {
     pub id: i32,
     pub username: String,
@@ -27,13 +25,27 @@ pub struct User {
     pub created_at: NaiveDateTime,
 }
 
-#[derive(Insertable)]
-#[diesel(table_name = crate::schema::users)]
-struct AutoregisterUser {
-    pub username: String,
-    pub password: String,
-    pub birthday: NaiveDate,
-    pub gender: i16,
+impl Default for User {
+    fn default() -> Self {
+        User{
+            id: -1,
+            username: "".to_string(),
+            password: "".to_string(),
+            birthday: Default::default(),
+            gender: 0,
+            nx_cash: 0,
+            maple_points: 0,
+            vote_points: 0,
+            account_type: 0,
+            pic: None,
+            spw: None,
+            ban_expire_date: None,
+            ban_reason: None,
+            last_login: None,
+            created_at: Default::default(),
+        }
+    }
+
 }
 
 impl User {
@@ -42,9 +54,8 @@ impl User {
     }
 
     // Fetch methods
-    pub fn insert_new_user(name: String, pw: String) -> QueryResult<Self> {
-        let mut conn = get_db();
-
+    pub async fn insert_new_user(name: String, pw: String) ->  Result<User, Error>{
+        let pool = &*get_db();
         let crypt_pw = argon2::hash_encoded(
             pw.as_bytes(),
             fungus_utils::constants::server_constants::ARGON_SALT,
@@ -52,27 +63,32 @@ impl User {
         )
         .unwrap_or(pw);
 
-        let new_user = AutoregisterUser {
-            username: name,
-            password: crypt_pw,
-            birthday: Default::default(),
-            gender: 0,
-        };
+        let date = NaiveDate::from_str("01/01/1990").unwrap_or(NaiveDate::default());
+        let new_user = sqlx::query_as!(
+            User,
+            "INSERT INTO users (username, password, birthday, gender) VALUES ($1, $2, $3, $4) RETURNING *",
+            name, crypt_pw, date, 0
+        ).fetch_one(pool).await;
 
-        insert_into(users).values(&new_user).get_result(&mut conn)
+        new_user
     }
 
-    pub fn get_user_by_username(user_username: String) -> Result<User, diesel::result::Error> {
-        let mut conn = get_db();
-        users.filter(username.eq(user_username)).first(&mut conn)
+    pub async fn get_user_by_username(user_username: String) -> Result<User, Error> {
+        let pool = &*get_db();
+        let user: User = sqlx::query_as!(
+            User,
+            "SELECT * FROM users WHERE username = $1",
+            user_username
+        ).fetch_one(pool).await?;
+
+        Ok(user)
     }
 
-    pub fn get_login_user(
+    pub async fn get_login_user(
         user_username: String,
         user_password: String,
-    ) -> Result<User, diesel::result::Error> {
-        let mut conn = get_db();
-
+    ) -> Result<User, Error> {
+        let pool = &*get_db();
         let crypt_pw = argon2::hash_encoded(
             user_password.as_bytes(),
             fungus_utils::constants::server_constants::ARGON_SALT,
@@ -80,14 +96,40 @@ impl User {
         )
         .unwrap_or(user_password);
 
-        users
-            .filter(username.eq(user_username))
-            .filter(password.eq(crypt_pw))
-            .first(&mut conn)
+        let user: User = sqlx::query_as!(
+            User,
+            "SELECT * FROM users WHERE username = $1 AND password = $2",
+            user_username, crypt_pw
+        ).fetch_one(pool).await?;
+
+        Ok(user)
     }
 
-    pub fn get_user_by_id(id: i32) -> Result<User, diesel::result::Error> {
-        let mut conn = get_db();
-        users.find(id).first(&mut conn)
+    pub async fn get_user_by_id(id: i32) -> Result<User, Error> {
+        let pool = &*get_db();
+        let user: User = sqlx::query_as!(
+            User,
+            "SELECT * FROM users WHERE id = $1",
+            id
+        ).fetch_one(pool).await?;
+
+        Ok(user)
+    }
+
+    pub async fn get_account(&mut self, world_id: i16) -> Result<Account, Error> {
+        let pool = &*get_db();
+        let user_id = self.id;
+        let acc_res = sqlx::query_as!(
+            Account,
+            "SELECT * FROM accounts WHERE user_id = $1 AND world_id = $2",
+            self.id, world_id
+        ).fetch_one(pool).await;
+
+        match acc_res {
+            Ok(acc) => Ok(acc),
+            Err(_) => {
+                Account::create_account(&self, world_id).await
+            }
+        }
     }
 }

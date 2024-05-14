@@ -10,6 +10,8 @@ use tokio::time;
 use tokio::time::Instant;
 use fungus_packet_utils::crypto::packet_coder::PacketCoder;
 use uuid::Uuid;
+use fungus_database::models::account::Account;
+use fungus_database::models::character::Character;
 use fungus_database::models::user::User;
 use fungus_packet_utils::in_packet::InPacket;
 use fungus_packet_utils::out_packet::OutPacket;
@@ -31,6 +33,9 @@ pub struct ClientSession {
     // Game Stuff
     pub channel: Option<Channel>,
     pub user: Option<User>,
+    pub account: Option<Account>,
+    pub character: Option<Character>,
+    pub world_id: i16,
 }
 
 impl Display for ClientSession {
@@ -46,9 +51,13 @@ impl ClientSession {
             ip,
             machine_id: "".to_string(),
             client_channel,
-            user: None,
             sender,
-            packet_encoder: Mutex::from(PacketCoder::default())
+            world_id: -1,
+            packet_encoder: Mutex::from(PacketCoder::default()),
+            user: None,
+            account: None,
+            channel: None,
+            character: None,
         }
     }
 
@@ -86,6 +95,14 @@ impl ClientSession {
                 Option::from(user_ref)
             }
         }
+    }
+
+    pub fn set_account(&mut self, account: Account) {
+        self.account = Some(account);
+    }
+
+    pub fn set_user(&mut self, user: User) {
+        self.user = Some(user);
     }
 
     pub async fn get_siv(&self) -> [u8; 16] {

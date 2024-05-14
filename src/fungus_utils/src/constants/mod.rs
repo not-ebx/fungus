@@ -1,2 +1,2 @@
 pub mod server_constants;
-mod game_constants;
+pub mod game_constants;

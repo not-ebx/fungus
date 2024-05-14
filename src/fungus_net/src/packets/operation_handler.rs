@@ -9,7 +9,7 @@ use log::{info, warn};
 use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
 use tokio::sync::MutexGuard;
-use crate::packets::login_packets::handlers::login_handlers::{handle_check_login_auth_info, handle_world_list_request, handle_world_status_request};
+use crate::packets::login_packets::handlers::login_handlers::{handle_check_login_auth_info, handle_select_world, handle_world_list_request, handle_world_status_request};
 use crate::packets::login_packets::login_packets::on_send_connect;
 
 //pub async fn handle_packet(session: &mut ClientSession, mut packet: InPacket) {
@@ -27,7 +27,7 @@ pub async fn handle_packet(session: &mut ClientSession, mut packet: InPacket) ->
             handle_world_status_request(session, &mut packet).await
         }
         InHeader::SelectWorld => {
-
+            handle_select_world(session, &mut packet).await
         }
         /*
         InHeader::GuestLogin => {}

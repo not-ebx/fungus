@@ -1,10 +1,11 @@
+use std::collections::HashSet;
 use crate::in_headers::InHeader::UNKNOWN;
-use std::fmt;
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, Display, EnumIter};
+use once_cell::sync::Lazy;
 
 #[repr(i16)]
-#[derive(Display, EnumIter, AsRefStr, PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(Display, EnumIter, AsRefStr, PartialEq, Eq, Debug, Clone, Copy, Hash)]
 pub enum InHeader {
     BeginSocket = 0,
 
@@ -28,6 +29,12 @@ pub enum InHeader {
     UNKNOWN = -1,
 }
 
+static IGNORED_HEADERS: Lazy<HashSet<InHeader>> = Lazy::new(||
+    HashSet::from([
+        InHeader::Pong
+    ])
+);
+
 impl From<i16> for InHeader {
     fn from(value: i16) -> InHeader {
         InHeader::iter()
@@ -39,5 +46,9 @@ impl From<i16> for InHeader {
 impl InHeader {
     pub fn to_u16(self) -> u16 {
         self as u16
+    }
+
+    pub fn is_ignored(&self) -> bool {
+        IGNORED_HEADERS.contains(self)
     }
 }

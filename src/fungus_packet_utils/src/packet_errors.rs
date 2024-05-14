@@ -9,6 +9,7 @@ pub enum PacketError {
     UnimplementedPacket(String),
     InvalidUtf8(Utf8Error),
     InvalidCipher(),
+    InvalidSession(),
 
     // High level errors..?
     CommunicationError()
@@ -37,6 +38,9 @@ impl fmt::Display for PacketError {
             }
             PacketError::CommunicationError() => {
                 write!(f, "Error: Could not send the packet")
+            }
+            PacketError::InvalidSession() => {
+                write!(f, "Error: Invalid session!!")
             }
             _ => {
                 write!(f, "Unhandled Error happened :(")
