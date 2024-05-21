@@ -1,11 +1,14 @@
+use std::ops::Not;
+use fungus_database::models::character::Character;
 use crate::session::client_session::ClientSession;
 use fungus_database::models::user::User;
 use fungus_packet_utils::in_packet::InPacket;
 use fungus_packet_utils::out_packet::OutPacket;
 use fungus_packet_utils::packet_errors::PacketError;
 use fungus_utils::constants::server_constants::ALLOW_AUTO_REGISTER;
+use fungus_utils::enums::character_id_result::CharacterIDResult;
 use fungus_utils::enums::login_type::LoginType;
-use crate::packets::login_packets::login_packets::{on_check_password_result, on_select_world_result, on_send_account_info, on_send_recommended_world_message, on_send_world_information_end, on_send_world_status};
+use crate::packets::login_packets::login_packets::{on_check_duplicated_id_result, on_check_password_result, on_select_world_result, on_send_account_info, on_send_recommended_world_message, on_send_world_information_end, on_send_world_status};
 use crate::server::server::SERVER_INSTANCE;
 
 pub async fn handle_check_login_auth_info(
@@ -115,4 +118,20 @@ pub async fn handle_select_world(session: &mut ClientSession, in_packet: &mut In
     session.send_packet(&on_select_world_result(session.user.as_ref().unwrap(), session.account.as_ref().unwrap()).await).await.unwrap();
     Ok(())
 
+}
+
+pub async fn handle_check_duplicate_id(session: &mut ClientSession, in_packet: &mut InPacket) -> Result<(), PacketError> {
+    let character_name = in_packet.read_string()?;
+    let mut check_result: CharacterIDResult = CharacterIDResult::Invalid;
+    if character_name.len() > 13 && character_name.len() < 4 {
+        check_result = CharacterIDResult::Invalid;
+    } else if Character::is_duplicated_id(character_name).await.not() {
+        check_result = CharacterIDResult::Available;
+    } else {
+        check_result = CharacterIDResult::InUse;
+    }
+
+    session.send_packet(
+        &on_check_duplicated_id_result(character_name, check_result).await
+    ).await
 }

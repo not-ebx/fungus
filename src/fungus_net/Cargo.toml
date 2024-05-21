@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 fungus_packet_utils = { path = "../fungus_packet_utils" }
-fungus_database = { path = "../fungus_database" }
+fungus_game = { path = "../fungus_game" }
 fungus_utils = { path = "../fungus_utils" }
 fungus_world = { path = "../fungus_world" }
 log = "0.4.21"

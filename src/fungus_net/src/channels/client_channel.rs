@@ -1,16 +1,16 @@
 use std::sync::Arc;
 use std::time::Duration;
-use log::{error, info, warn};
-use fungus_packet_utils::crypto::packet_coder::PacketCoder;
-use fungus_packet_utils::in_packet::InPacket;
-use fungus_packet_utils::out_packet::OutPacket;
-use tokio::sync::mpsc::{Receiver, Sender};
+
+use log::{error, warn};
+use tokio::sync::mpsc::{Receiver};
 use tokio::sync::Mutex;
 use tokio::time;
 use tokio::time::Instant;
+
+use fungus_packet_utils::crypto::packet_coder::PacketCoder;
 use fungus_packet_utils::packet_errors::PacketError;
-use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
-use crate::packets::login_packets::login_packets::{on_send_connect, on_send_ping};
+
+use crate::packets::login_packets::login_packets::on_send_ping;
 use crate::packets::operation_handler::handle_packet;
 use crate::session::client_session::ClientSession;
 

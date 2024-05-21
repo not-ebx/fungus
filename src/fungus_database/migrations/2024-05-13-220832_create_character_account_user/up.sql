@@ -1,3 +1,10 @@
+-- Inventories Table
+CREATE TABLE inventories (
+                             id BIGSERIAL PRIMARY KEY,
+                             slots SMALLINT NOT NULL DEFAULT 52,
+                             inv_type SMALLINT NOT NULL
+);
+
 -- Users Table
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
@@ -99,7 +106,13 @@ CREATE TABLE characters (
                             account_id INTEGER NOT NULL REFERENCES accounts(id),
                             avatar_look_id INTEGER NOT NULL REFERENCES avatar_looks(id),
                             character_stats_id INTEGER NOT NULL REFERENCES character_stats(id),
-                            last_login_id INTEGER
+                            last_login_id INTEGER,
+                            equipped_inventory BIGINT REFERENCES inventories(id),
+                            equip_inventory BIGINT REFERENCES inventories(id),
+                            consume_inventory BIGINT REFERENCES inventories(id),
+                            install_inventory BIGINT REFERENCES inventories(id),
+                            etc_inventory BIGINT REFERENCES inventories(id),
+                            cash_inventory BIGINT REFERENCES inventories(id)
 );
 
 -- Character Logins Table
@@ -112,12 +125,7 @@ CREATE TABLE character_logins (
                                   machine_id VARCHAR NOT NULL
 );
 
--- Inventories Table
-CREATE TABLE inventories (
-                             id BIGSERIAL PRIMARY KEY,
-                             slots SMALLINT NOT NULL DEFAULT 52,
-                             inv_type SMALLINT NOT NULL
-);
+
 
 -- Items Table
 CREATE TABLE items (

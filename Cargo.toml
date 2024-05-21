@@ -9,6 +9,5 @@ edition = "2021"
 [dependencies]
 fungus_login = { path = "src/fungus_login" }
 tokio = { version = "1.37.0", features = ["full"]}
-diesel = "2.1.6"
 aes = "0.8.4"
 cipher = {  version = "0.4.4", features = ["block-padding"]}

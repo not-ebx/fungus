@@ -9,7 +9,10 @@ use once_cell::sync::Lazy;
 pub enum InHeader {
     BeginSocket = 0,
 
+    EULA = 7,
+
     // OnLogin
+    WorldInfoRequest = 11,
     CharSelect = 12,
     VersionVerify = 20,
     CheckLoginAuthInfo = 21,
@@ -18,11 +21,17 @@ pub enum InHeader {
     SelectPreviousWorld = 24,
     SelectWorld = 25,
     WorldStatusRequest = 26,
+
     WorldListRequest = 31,
     RedisplayWorldList = 32,
-    EULA = 7,
-    WorldInfoRequest = 11,
+
+    CharSelectNoPic = 39,
+
+    CheckDuplicateID = 41,
+    CreateNewCharacter = 42,
+
     Pong = 46,
+
     ClientStart = 56,
     ClientError = 59,
 

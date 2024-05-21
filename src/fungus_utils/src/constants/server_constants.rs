@@ -1,4 +1,3 @@
-use std::string::ToString;
 use std::time::Duration;
 
 pub const ARGON_SALT: &[u8] = "strong salt and pepper lmao".as_bytes();

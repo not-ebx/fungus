@@ -1,7 +1,7 @@
 use crate::crypto::packet_cipher::PacketCipher;
 use crate::in_packet::InPacket;
 use crate::out_packet::OutPacket;
-use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt};
 use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
 use log::info;
 

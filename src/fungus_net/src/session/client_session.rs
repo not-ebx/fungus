@@ -10,9 +10,10 @@ use tokio::time;
 use tokio::time::Instant;
 use fungus_packet_utils::crypto::packet_coder::PacketCoder;
 use uuid::Uuid;
-use fungus_database::models::account::Account;
-use fungus_database::models::character::Character;
-use fungus_database::models::user::User;
+use fungus_game::entities::account::Account;
+use fungus_game::entities::character::Character;
+use fungus_game::entities::user::User;
+use fungus_game::services::service_registry::ServiceRegistry;
 use fungus_packet_utils::in_packet::InPacket;
 use fungus_packet_utils::out_packet::OutPacket;
 use fungus_packet_utils::packet_errors::PacketError;
@@ -36,6 +37,9 @@ pub struct ClientSession {
     pub account: Option<Account>,
     pub character: Option<Character>,
     pub world_id: i16,
+
+    // Services
+    pub service_registry: Arc<ServiceRegistry>
 }
 
 impl Display for ClientSession {
@@ -45,7 +49,7 @@ impl Display for ClientSession {
 }
 
 impl ClientSession {
-    pub fn new(ip: String, client_channel: Arc<RwLock<ClientChannel>>, sender: Sender<Vec<u8>>) -> Self {
+    pub fn new(ip: String, client_channel: Arc<RwLock<ClientChannel>>, sender: Sender<Vec<u8>>, service_registry: Arc<ServiceRegistry>) -> Self {
         ClientSession {
             session_id: Uuid::new_v4(),
             ip,
@@ -58,6 +62,7 @@ impl ClientSession {
             account: None,
             channel: None,
             character: None,
+            service_registry
         }
     }
 

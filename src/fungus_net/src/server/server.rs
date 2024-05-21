@@ -2,9 +2,8 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use once_cell::sync::Lazy;
-use fungus_database::game_data::item_data::ItemData;
-use fungus_database::models::user::User;
-use fungus_world::channel::Channel;
+use fungus_game::services::service_registry::ServiceRegistry;
+use fungus_utils::fg_printc_info;
 use fungus_world::world::World;
 
 pub struct Server {
@@ -12,25 +11,20 @@ pub struct Server {
     pub worlds: Arc<RwLock<Vec<World>>>,
 
     // Stuff
-    pub item_loader: ItemData,
+    //pub service_registry: Arc<ServiceRegistry>,
 }
 
 impl Server {
     pub fn new() -> Server {
+        fg_printc_info!("Starting Fungus v0.0.1 Alpha. What the sigma");
         let worlds = Arc::new(RwLock::new(vec![
             World::new(0, String::from("SpookyMS"), 1, 1)
         ]));
 
-        // Test the database connection
-        let _ = fungus_database::database::get_db();
-
-        let mut item_loader = ItemData::new();
-        item_loader.load_all().expect("Dead.");
-
         Server {
             users: Default::default(),
             worlds,
-            item_loader
+            service_registry: Arc::from(ServiceRegistry::new())
         }
     }
 
@@ -46,7 +40,10 @@ impl Server {
         self.worlds.clone()
     }
 
-
+    pub fn get_starting_items(&self) -> HashSet<i32> {
+        let etc_service = self.service_registry.get_game_data_service().etc_data.clone();
+        etc_service.starting_items.clone()
+    }
 }
 
 pub static SERVER_INSTANCE: Lazy<Arc<RwLock<Server>>> = Lazy::new(|| {

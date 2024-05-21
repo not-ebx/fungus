@@ -1,10 +1,8 @@
-use aes::cipher::generic_array::GenericArray;
-use aes::cipher::{BlockEncrypt, Key, KeyInit, StreamCipherCoreWrapper};
-use aes::{Aes128, Aes256};
+use aes::cipher::{StreamCipherCoreWrapper};
+use aes::{Aes256};
 use fungus_utils::constants::server_constants::VERSION;
 use ofb::cipher::{KeyIvInit, StreamCipher};
 use ofb::{Ofb, OfbCore};
-use std::io::Read;
 
 const BLOCK_SIZE: usize = 1460;
 
@@ -31,8 +29,6 @@ const SHUFFLE_BYTES: [u8; 256] = [
     0x96, 0x41, 0x74, 0xAC, 0x52, 0x33, 0xF0, 0xD9, 0x29, 0x80, 0xB1, 0x16, 0xD3, 0xAB, 0x91, 0xB9,
     0x84, 0x7F, 0x61, 0x1E, 0xCF, 0xC5, 0xD1, 0x56, 0x3D, 0xCA, 0xF4, 0x05, 0xC6, 0xE5, 0x08, 0x49,
 ];
-
-pub struct AesCipher {}
 
 pub struct PacketCipher {
     send_cipher: StreamCipherCoreWrapper<OfbCore<Aes256>>,
@@ -110,7 +106,7 @@ impl PacketCipher {
     pub fn get_header(&mut self, delta: usize, iv: &[u8; 16]) -> [u8; 4] {
         let mut a: i32 = (iv[3] & 0xFF) as i32;
         a |= (((iv[2] as i32) << 8_i32) & 0xFF00);
-        a = (a ^ self.s_version as i32);
+        a = a ^ self.s_version as i32;
         let b = (((delta << 8) & 0xFF00) | (delta >> 8)) as i32;
         let c = a ^ b;
         [

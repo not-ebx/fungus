@@ -1,10 +1,7 @@
 use std::env;
-use std::future::{Future, IntoFuture};
 use std::sync::Arc;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use once_cell::sync::Lazy;
-use sqlx::{Error, Postgres};
-use sqlx::pool::PoolConnection;
 
 static DATABASE_POOL: Lazy<Arc<PgPool>> = Lazy::new(|| {
     let database_url= env::var("DATABASE_URL").expect("DATABASE_URL missing in .env file");

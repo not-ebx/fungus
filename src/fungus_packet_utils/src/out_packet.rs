@@ -1,12 +1,10 @@
 use crate::out_headers::OutHeader;
-use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
+use byteorder::{ByteOrder, LittleEndian};
 use core::fmt;
 use fungus_utils::traits::encodable::Encodable;
-use log::{error, info};
+use log::{error};
 use std::fmt::Formatter;
-use std::io;
 use std::io::Write;
-use std::time::SystemTime;
 
 pub struct OutPacket {
     pub opcode: OutHeader,
@@ -117,7 +115,7 @@ impl OutPacket {
         let str_bytes: &[u8] = value.as_bytes();
 
         self.write_short(length_bytes as i16);
-        let res = self.packet.write_all(&str_bytes);
+        let _ = self.packet.write_all(&str_bytes);
     }
 
     pub fn write_bytes(&mut self, value: &[u8]) {

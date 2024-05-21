@@ -1,6 +1,4 @@
 use crate::in_headers::InHeader;
-use crate::out_headers::OutHeader;
-use crate::out_packet::OutPacket;
 use crate::packet_errors::PacketError;
 use byteorder::{ByteOrder, LittleEndian};
 use core::fmt;
@@ -49,10 +47,8 @@ impl InPacket {
         self.opcode.clone()
     }
 
-    fn write_opcode(&self) {}
-
     pub fn read_byte(&mut self) -> Result<u8, PacketError> {
-        if self.cursor + 1 >= self.packet.len() {
+        if self.cursor + 1 > self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
             let bytes = self.packet[self.cursor..self.cursor + 1].to_vec();
@@ -62,7 +58,7 @@ impl InPacket {
     }
 
     pub fn read_short(&mut self) -> Result<i16, PacketError> {
-        if self.cursor + 2 >= self.packet.len() {
+        if self.cursor + 2 > self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
             let bytes = self.packet[self.cursor..self.cursor + 2].to_vec();
@@ -72,7 +68,7 @@ impl InPacket {
     }
 
     pub fn read_int(&mut self) -> Result<i32, PacketError> {
-        if self.cursor + 4 >= self.packet.len() {
+        if self.cursor + 4 > self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
             let bytes = self.packet[self.cursor..self.cursor + 2].to_vec();
@@ -93,7 +89,7 @@ impl InPacket {
 
     pub fn read_string(&mut self) -> Result<&str, PacketError> {
         let str_length: usize = self.read_short()? as usize;
-        if self.cursor + str_length >= self.packet.len() {
+        if self.cursor + str_length > self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
             let bytes = &self.packet[self.cursor..self.cursor + str_length];
@@ -104,7 +100,7 @@ impl InPacket {
 
     pub fn read_exact(&mut self, byte_array: &mut Vec<u8>) -> Result<(), PacketError> {
         let arr_size = byte_array.len();
-        if self.cursor + arr_size >= self.packet.len() {
+        if self.cursor + arr_size > self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
             let bytes = &self.packet[self.cursor..self.cursor + arr_size].to_vec();

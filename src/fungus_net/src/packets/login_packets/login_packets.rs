@@ -9,6 +9,7 @@ use fungus_utils::enums::login_type::LoginType;
 use fungus_utils::types::fungus_time::FungusTime;
 use rand::{Rng, RngCore};
 use fungus_database::models::account::Account;
+use fungus_utils::enums::character_id_result::CharacterIDResult;
 use fungus_utils::enums::server_status::ServerStatus;
 use fungus_world::world::World;
 use crate::server::server::SERVER_INSTANCE;
@@ -151,6 +152,7 @@ pub async fn on_send_account_info(user: &User) -> OutPacket {
     out_packet.write_string(user.username.clone());
     out_packet.write_byte(3); // 3 for new accds .. ?
     out_packet.write_byte(0); // quiet ban
+    out_packet.write_long(0); // quiet ban time
 
     // Get the time
     let ms_time = FungusTime::from(user.created_at.clone());
@@ -184,6 +186,14 @@ pub async fn on_select_world_result(user: &User, account: &Account) -> OutPacket
     out_packet.write_byte(1);
     out_packet.write_int(account.character_slots as i32);
     out_packet.write_int(0);
+
+    out_packet
+}
+
+pub async fn on_check_duplicated_id_result(name: &str, result: CharacterIDResult) -> OutPacket {
+    let mut out_packet = OutPacket::new(OutHeader::CheckDuplicatedIdResult);
+    out_packet.write_string(name.to_string());
+    out_packet.write_byte(result as u8);
 
     out_packet
 }
