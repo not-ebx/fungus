@@ -52,7 +52,9 @@ impl CharacterService {
             &mut tx,
             face,
             hair,
-            skin
+            skin,
+            gender as i16,
+            job,
         ).await?;
 
         let character_stats = self.character_stats_dao.create_query(

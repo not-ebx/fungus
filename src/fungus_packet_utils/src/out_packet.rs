@@ -1,10 +1,10 @@
 use crate::out_headers::OutHeader;
 use byteorder::{ByteOrder, LittleEndian};
 use core::fmt;
-use fungus_utils::traits::encodable::Encodable;
 use log::{error};
 use std::fmt::Formatter;
 use std::io::Write;
+use crate::traits::encodable::Encodable;
 
 pub struct OutPacket {
     pub opcode: OutHeader,
@@ -72,18 +72,13 @@ impl OutPacket {
         }
     }
 
-    pub fn from_encodable<T: Encodable>(value: T) -> Self {
-        let vec_packet = value.encode();
-        OutPacket::from(vec_packet)
-    }
-
     fn get_opcode(&self) -> i16 {
         let opcode_bytes = self.packet.get(0..2).unwrap_or(&[0, 0]);
         LittleEndian::read_i16(opcode_bytes)
     }
 
     pub fn write<T: Encodable>(&mut self, value: T) {
-        self.write_bytes(value.encode().as_slice());
+        value.encode(&mut self);
     }
 
     pub fn write_bool(&mut self, value: bool) {

@@ -146,7 +146,7 @@ pub async fn handle_check_duplicate_id(session: &mut ClientSession, in_packet: &
     let mut check_result: CharacterIDResult = CharacterIDResult::Invalid;
     if character_name.len() > 13 && character_name.len() < 4 {
         check_result = CharacterIDResult::Invalid;
-    } else if session.service_registry.get_character_service().is_duplicated_id(character_name).await {
+    } else if session.service_registry.get_character_service().is_duplicated_id(character_name).await.not() {
         check_result = CharacterIDResult::Available;
     } else {
         check_result = CharacterIDResult::InUse;

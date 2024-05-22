@@ -84,7 +84,7 @@ pub fn on_success_login(user: &User) -> OutPacket {
     // Get the time
     let ms_time = FungusTime::from(user.created_at.clone());
 
-    out_packet.write(ms_time);
+    out_packet.write_long(ms_time.into());
 
     // Something to select the world
     out_packet.write_int(4);

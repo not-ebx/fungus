@@ -93,6 +93,11 @@ CREATE TABLE avatar_looks (
                               face INTEGER NOT NULL,
                               hair INTEGER NOT NULL,
                               skin INTEGER NOT NULL,
+                              job INTEGER NOT NULL,
+                              gender SMALLINT NOT NULL,
+                              weapon_id INTEGER,
+                              sub_weapon_id INTEGER,
+                              weapon_sticker_id INTEGER,
                               elf_ear BOOLEAN NOT NULL DEFAULT false,
                               ears INTEGER NOT NULL,
                               demon_slayer_mark INTEGER NOT NULL

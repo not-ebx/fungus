@@ -6,10 +6,9 @@ use rust_nx::nx_node::NXNode;
 use fungus_utils::constants::game_constants::NX_FILES_DIR;
 use fungus_utils::enums::inv_type::InvType;
 use fungus_utils::fg_printc_info;
-use fungus_utils::utility::item_utility::is_equipment;
-use crate::game_data::game_info::item_info::ItemInfo;
 use crate::entities::equipment::Equipment;
 use crate::entities::item::Item;
+use crate::game_data::game_info::item_utilities::{BodyPart, EquipPrefix, get_item_prefix, is_equipment, is_weapon};
 
 pub struct ItemData {
     pub equipments: HashMap<i32, Equipment>,

@@ -550,6 +550,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "fungus_database",
+ "fungus_packet_utils",
  "fungus_utils",
  "log",
  "rust-argon2",
@@ -588,6 +589,7 @@ version = "0.1.0"
 name = "fungus_net"
 version = "0.1.0"
 dependencies = [
+ "byteorder",
  "env_logger",
  "fungus_game",
  "fungus_packet_utils",
@@ -638,6 +640,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rand 0.9.0-alpha.1",
+ "serde",
  "strum",
  "strum_macros",
  "syn 2.0.60",

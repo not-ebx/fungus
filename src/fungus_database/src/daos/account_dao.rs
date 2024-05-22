@@ -1,4 +1,4 @@
-use sqlx::{Error, PgPool, Postgres, Transaction};
+use sqlx::{Acquire, Connection, Error, PgPool, Postgres, Transaction};
 use crate::serializers::account_serializer::AccountSerializer;
 use crate::serializers::trunk_serializer::TrunkSerializer;
 

@@ -1,10 +1,10 @@
 use tokio::time::Instant;
 use fungus_utils::enums::inv_type::InvType;
 use fungus_utils::{fg_printc_error, fg_printc_info};
-use fungus_utils::utility::item_utility::is_equipment;
 use crate::entities::equipment::Equipment;
 use crate::entities::item::Item;
 use crate::game_data::etc_data::EtcData;
+use crate::game_data::game_info::item_utilities::is_equipment;
 use crate::game_data::item_data::ItemData;
 
 pub struct GameDataService {

@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 
+#[derive(Debug)]
 pub enum ConvertError {
     UnknownType,
     UnknownValue(String)

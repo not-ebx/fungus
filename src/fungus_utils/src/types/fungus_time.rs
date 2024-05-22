@@ -1,6 +1,5 @@
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{NaiveDateTime};
-use crate::traits::encodable::{Encodable};
 
 pub struct FungusTime {
     time: NaiveDateTime
@@ -14,13 +13,9 @@ impl From<NaiveDateTime> for FungusTime {
     }
 }
 
-impl Encodable for FungusTime {
-    fn encode(&self) -> Vec<u8> {
-        let as_long = self.get_long();
-        let mut as_bytes: [u8; 8] = [0;8];
-        LittleEndian::write_i64(&mut as_bytes, as_long);
-
-        as_bytes.to_vec()
+impl Into<i64> for FungusTime {
+    fn into(self) -> i64 {
+       self.get_long()
     }
 }
 
