@@ -4,6 +4,7 @@ use log::info;
 use fungus_database::database::get_db;
 use fungus_utils::{fg_printc_error, fg_printc_info};
 use crate::services::account_service::AccountService;
+use crate::services::character_service::CharacterService;
 use crate::services::game_data_service::GameDataService;
 use crate::services::item_service::ItemService;
 use crate::services::user_service::UserService;
@@ -13,6 +14,7 @@ pub struct ServiceRegistry {
     user_service: Arc<UserService>,
     item_service: Arc<ItemService>,
     game_data_service: Arc<GameDataService>,
+    character_service: Arc<CharacterService>,
 }
 
 impl ServiceRegistry {
@@ -35,6 +37,7 @@ impl ServiceRegistry {
             user_service: Arc::new(UserService::new()),
             item_service: Arc::new(ItemService::new()),
             game_data_service: Arc::new(game_data_service),
+            character_service: Arc::new(CharacterService::new())
         };
 
         let startup_duration = Instant::now() - total_time;
@@ -56,5 +59,9 @@ impl ServiceRegistry {
 
     pub fn get_item_service(&self) -> Arc<ItemService> {
         self.item_service.clone()
+    }
+
+    pub fn get_character_service(&self) -> Arc<CharacterService> {
+        self.character_service.clone()
     }
 }

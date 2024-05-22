@@ -5,6 +5,7 @@ use rust_nx::nx_file::NXFile;
 use rust_nx::nx_node::NXNode;
 use fungus_utils::constants::game_constants::NX_FILES_DIR;
 use fungus_utils::enums::inv_type::InvType;
+use fungus_utils::fg_printc_info;
 use fungus_utils::utility::item_utility::is_equipment;
 use crate::game_data::game_info::item_info::ItemInfo;
 use crate::entities::equipment::Equipment;
@@ -23,6 +24,22 @@ impl ItemData {
         }
     }
 
+    pub fn fetch_equipment(&self, id: i32) -> Option<Equipment>{
+        let id_c = id.clone();
+        match self.equipments.get(&id_c) {
+            Some(eqp) => Some(eqp.clone()),
+            None => None
+        }
+    }
+
+    pub fn fetch_item(&self, id: i32) -> Option<Item>{
+        let id_c = id.clone();
+        match self.item_info.get(&id) {
+            Some(eqp) => Some(eqp.clone()),
+            None => None
+        }
+    }
+
     pub fn load_all(&mut self) -> Result<(), Error>{
         self.load_items()?;
         self.load_equips()?;
@@ -31,7 +48,7 @@ impl ItemData {
     }
 
     fn load_equips(&mut self) -> Result<(), Error>{
-        info!("Loading Equipments");
+        fg_printc_info!("Loading Equipments");
         let character_nx_loc = NX_FILES_DIR.to_string() + "/Character.nx";
         let character_nx: NXFile = NXFile::new(&*character_nx_loc)?;
         let equip_categories = [
@@ -130,12 +147,12 @@ impl ItemData {
                 }
             }
         }
-        info!("Successfully loaded {} equips", self.equipments.len());
+        fg_printc_info!("Successfully loaded {} equips", self.equipments.len());
         Ok(())
     }
 
     fn load_items(&mut self) -> Result<(), Error> {
-        info!("Loading item infos");
+        fg_printc_info!("Loading Item Infos");
         let item_nx_loc = NX_FILES_DIR.to_string() + "/Item.nx";
         let item_nx: NXFile = NXFile::new(&*item_nx_loc)?;
         let item_categories = [
@@ -169,8 +186,8 @@ impl ItemData {
                         let value = info.data.clone();
                         // TODO finish this shit lol
                         match info_name.as_str() {
-                            "price" => new_item.price = value.into(),
-                            "slotMax" => new_item.max_slot = value.into(),
+                            //"price" => new_item.price = value.into(),
+                            //"slotMax" => new_item.max_slot = value.into(),
                             _ => {}
                         }
                     }
@@ -182,7 +199,7 @@ impl ItemData {
                 }
             }
         }
-        info!("Successfully loaded {} items", self.item_info.len());
+        fg_printc_info!("Successfully loaded {} items", self.item_info.len());
         Ok(())
     }
 

@@ -46,7 +46,9 @@ impl UserService {
                         username.clone(),
                         password.clone()
                     ).await?;
-                    self.try_login(username.clone(), password.clone()).await
+                    Box::pin(async move {
+                        self.try_login(username.clone(), password.clone()).await
+                    }).await
                 } else {
                     return Err(ServiceError::NotFound)
                 }

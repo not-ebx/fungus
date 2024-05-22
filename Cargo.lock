@@ -553,7 +553,7 @@ dependencies = [
  "fungus_utils",
  "log",
  "rust-argon2",
- "rust_nx 0.1.2",
+ "rust_nx 0.1.4",
  "serde",
  "sqlx",
  "tokio",
@@ -572,7 +572,7 @@ name = "fungus_login"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "fungus_database",
+ "fungus_game",
  "fungus_net",
  "fungus_packet_utils",
  "fungus_utils",
@@ -620,7 +620,7 @@ name = "fungus_server"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "fungus_database",
+ "fungus_game",
  "fungus_login",
  "fungus_net",
  "fungus_utils",
@@ -1413,14 +1413,6 @@ dependencies = [
 name = "rust_nx"
 version = "0.1.1"
 source = "git+https://github.com/not-ebx/rustNX?tag=v0.1.1#5b60b1a86b0111dce44ae76d91522aa7244f61ab"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
-name = "rust_nx"
-version = "0.1.2"
-source = "git+https://github.com/not-ebx/rustNX?tag=v0.1.2#51f3ac9e11688fc7026137c60b16032cb9974f9a"
 dependencies = [
  "byteorder",
 ]

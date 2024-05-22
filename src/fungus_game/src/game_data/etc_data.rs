@@ -4,13 +4,13 @@ use log::info;
 use rust_nx::nx_file::NXFile;
 use rust_nx::nx_node::{NXNode, NXNodeData, NXNodeType};
 use fungus_utils::constants::game_constants::NX_FILES_DIR;
+use fungus_utils::fg_printc_info;
 
 pub struct EtcData {
     pub starting_items: HashSet<i32>,
 }
 
 impl EtcData {
-
     pub fn new() -> Self {
         EtcData {
             starting_items: Default::default()
@@ -18,9 +18,9 @@ impl EtcData {
     }
 
     pub fn load_all(&mut self) -> Result<(), Error> {
-        info!("Loading Starting items");
+        fg_printc_info!("Loading Starting items");
         self.load_starting_items()?;
-        info!("Loaded {} items", self.starting_items.len());
+        fg_printc_info!("Loaded {} items", self.starting_items.len());
 
         Ok(())
     }

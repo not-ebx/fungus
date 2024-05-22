@@ -8,4 +8,4 @@ pub mod avatar_look_serializer;
 pub mod character_stats_serializer;
 pub mod user_serializer;
 pub mod account_serializer;
-mod sp_set_serializer;
+pub mod sp_set_serializer;

@@ -22,6 +22,7 @@ use fungus_world::channel::Channel;
 use crate::channels::client_channel::ClientChannel;
 use crate::packets::login_packets::login_packets::on_send_connect;
 use crate::packets::operation_handler::handle_packet;
+use crate::server::server::Server;
 
 pub struct ClientSession {
     session_id: Uuid,
@@ -39,7 +40,8 @@ pub struct ClientSession {
     pub world_id: i16,
 
     // Services
-    pub service_registry: Arc<ServiceRegistry>
+    pub service_registry: Arc<ServiceRegistry>,
+    pub server_instance: Arc<Server>
 }
 
 impl Display for ClientSession {
@@ -49,7 +51,7 @@ impl Display for ClientSession {
 }
 
 impl ClientSession {
-    pub fn new(ip: String, client_channel: Arc<RwLock<ClientChannel>>, sender: Sender<Vec<u8>>, service_registry: Arc<ServiceRegistry>) -> Self {
+    pub fn new(ip: String, client_channel: Arc<RwLock<ClientChannel>>, sender: Sender<Vec<u8>>, service_registry: Arc<ServiceRegistry>, server_instance: Arc<Server>) -> Self {
         ClientSession {
             session_id: Uuid::new_v4(),
             ip,
@@ -62,7 +64,8 @@ impl ClientSession {
             account: None,
             channel: None,
             character: None,
-            service_registry
+            service_registry,
+            server_instance
         }
     }
 

@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
+use fungus_database::serializers::item_serializer::ItemSerializer;
 use fungus_utils::enums::inv_type::InvType;
 use fungus_utils::enums::item_type::ItemType;
-use crate::serializers::item_serializer::ItemSerializer;
 
 #[derive(Clone)]
 pub struct Item {

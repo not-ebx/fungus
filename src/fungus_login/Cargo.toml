@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 fungus_net = { path = "../fungus_net" }
 fungus_packet_utils = { path = "../fungus_packet_utils" }
-fungus_database = { path = "../fungus_database" }
+fungus_game = { path = "../fungus_game" }
 fungus_utils = { path = "../fungus_utils" }
 log = "0.4.21"
 tokio = { version = "1.37.0", features = ["full"] }

@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use once_cell::sync::Lazy;
+use fungus_game::entities::user::User;
 use fungus_game::services::service_registry::ServiceRegistry;
 use fungus_utils::fg_printc_info;
 use fungus_world::world::World;
@@ -11,7 +12,7 @@ pub struct Server {
     pub worlds: Arc<RwLock<Vec<World>>>,
 
     // Stuff
-    //pub service_registry: Arc<ServiceRegistry>,
+    pub service_registry: Arc<ServiceRegistry>,
 }
 
 impl Server {
@@ -28,6 +29,10 @@ impl Server {
         }
     }
 
+    pub fn get_services_registry(&self) -> Arc<ServiceRegistry> {
+        self.service_registry.clone()
+    }
+
     pub fn is_user_online(&self, uid: i32) -> bool {
         self.users.contains(&uid)
     }
@@ -41,11 +46,6 @@ impl Server {
     }
 
     pub fn get_starting_items(&self) -> HashSet<i32> {
-        let etc_service = self.service_registry.get_game_data_service().etc_data.clone();
-        etc_service.starting_items.clone()
+        self.service_registry.get_game_data_service().etc_data.starting_items.clone()
     }
 }
-
-pub static SERVER_INSTANCE: Lazy<Arc<RwLock<Server>>> = Lazy::new(|| {
-    Arc::new(RwLock::new(Server::new()))
-});

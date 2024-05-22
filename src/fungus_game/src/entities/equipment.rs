@@ -1,7 +1,6 @@
+use fungus_database::serializers::equipment_serializer::EquipmentSerializer;
 use fungus_utils::enums::item_type::ItemType;
-use crate::models::item::Item;
-use crate::serializers::character_serializer::CharacterSerializer;
-use crate::serializers::equipment_serializer::EquipmentSerializer;
+use crate::entities::item::Item;
 
 #[derive(Clone)]
 pub struct Equipment {

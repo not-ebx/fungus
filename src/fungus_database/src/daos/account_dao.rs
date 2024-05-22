@@ -10,7 +10,7 @@ impl AccountDAO {
             AccountSerializer,
             "INSERT INTO accounts (world_id, character_slots, user_id, trunk_id) VALUES ($1, $2, $3, $4) RETURNING *",
             world_id, 3, user_id, trunk.id
-        ).fetch_one(tx).await
+        ).fetch_one(&mut **tx).await
     }
 
     pub async fn get_user_account(&self, pool: &PgPool, user_id: i32, world_id: i16) -> Result<AccountSerializer, Error> {

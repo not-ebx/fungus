@@ -1,15 +1,15 @@
 use std::ops::Not;
-use fungus_database::models::character::Character;
+use fungus_game::entities::character::Character;
 use crate::session::client_session::ClientSession;
-use fungus_database::models::user::User;
+use fungus_game::entities::user::User;
+use fungus_game::errors::service_errors::ServiceError;
 use fungus_packet_utils::in_packet::InPacket;
 use fungus_packet_utils::out_packet::OutPacket;
 use fungus_packet_utils::packet_errors::PacketError;
-use fungus_utils::constants::server_constants::ALLOW_AUTO_REGISTER;
 use fungus_utils::enums::character_id_result::CharacterIDResult;
 use fungus_utils::enums::login_type::LoginType;
+use fungus_utils::enums::server_status::ServerStatus;
 use crate::packets::login_packets::login_packets::{on_check_duplicated_id_result, on_check_password_result, on_select_world_result, on_send_account_info, on_send_recommended_world_message, on_send_world_information_end, on_send_world_status};
-use crate::server::server::SERVER_INSTANCE;
 
 pub async fn handle_check_login_auth_info(
     session: &mut ClientSession,
@@ -22,27 +22,26 @@ pub async fn handle_check_login_auth_info(
 
     // things used to pass to session
     let mut logged_user: Option<User> = None;
-
-    let user_result = User::get_user_by_username(username.clone()).await;
+    let user_service = session.service_registry.clone().get_user_service();
+    let user_result = user_service.try_login(
+        username.clone(),
+        password.clone()
+    ).await;
 
     let login_type = match user_result {
         Ok(user) => {
             // TODO - Check for bans and stuff.
-            if user.check_password(password) {
-                logged_user = Some(user);
-                LoginType::Success
-            } else {
-                LoginType::IncorrectPassword
-            }
+            logged_user = Some(user);
+            LoginType::Success
+        }
+        Err(ServiceError::NotFound) => {
+            LoginType::NotRegistered
+        }
+        Err(ServiceError::InvalidDetails) => {
+            LoginType::IncorrectPassword
         }
         _ => {
-            if ALLOW_AUTO_REGISTER {
-                let new_user = User::insert_new_user(username.clone(), password.clone()).await.expect("Could NOT autoregister");
-                logged_user = Some(new_user);
-                LoginType::Success
-            } else {
-                LoginType::NotRegistered
-            }
+            LoginType::Unknown
         }
     };
 
@@ -72,7 +71,8 @@ pub async fn handle_check_login_auth_info(
 
 
 pub async fn handle_world_list_request(session: &mut ClientSession, in_packet: InPacket) -> Result<(), PacketError> {
-    let worlds = SERVER_INSTANCE.read().await.get_worlds();
+    let server_instance = session.server_instance.clone();
+    let worlds = server_instance.get_worlds();
 
     for world in worlds.read().await.iter() {
         let world_info_packet = OutPacket::from(world.get_info_as_packet().await);
@@ -93,8 +93,25 @@ pub async fn handle_world_list_request(session: &mut ClientSession, in_packet: I
 
 pub async fn handle_world_status_request(session: &mut ClientSession, in_packet: &mut InPacket) -> Result<(), PacketError>{
     let world_id: i32 = in_packet.read_byte()? as i32;
+
+    let world_search = {
+        let server_instance = session.server_instance.clone();
+        let worlds_lock = server_instance.get_worlds();
+        let worlds = worlds_lock.read().await;
+        worlds.iter().find(|&w| w.id == world_id).cloned()
+    };
+
+    let world_status = match world_search {
+        None => {
+            ServerStatus::Busy as u8
+        }
+        Some(world) => {
+            world.get_status() as u8
+        }
+    };
+
     session.send_packet(
-        &on_send_world_status(world_id).await
+        &on_send_world_status(world_status).await
     ).await?;
 
     Ok(())
@@ -107,9 +124,13 @@ pub async fn handle_select_world(session: &mut ClientSession, in_packet: &mut In
 
     // Check if the user has an Account created in that world, else, create a new one.
     {
-        let mut user = session.user.as_mut().unwrap();
-        let acc = user.get_account(world_id as i16).await.unwrap();
-        session.account = Some(acc);
+        let account_service = session.service_registry.get_account_service();
+        let user = session.user.as_mut().unwrap();
+        let account = account_service.get_account(user.id, world_id as i16).await;
+        if let Err(_) = account {
+            return Err(PacketError::CommunicationError())
+        }
+        session.account = Some(account.unwrap());
         session.world_id = world_id as i16;
     }
     // Better top handle channel stuff form the server instance itself.
@@ -125,7 +146,7 @@ pub async fn handle_check_duplicate_id(session: &mut ClientSession, in_packet: &
     let mut check_result: CharacterIDResult = CharacterIDResult::Invalid;
     if character_name.len() > 13 && character_name.len() < 4 {
         check_result = CharacterIDResult::Invalid;
-    } else if Character::is_duplicated_id(character_name).await.not() {
+    } else if session.service_registry.get_character_service().is_duplicated_id(character_name).await {
         check_result = CharacterIDResult::Available;
     } else {
         check_result = CharacterIDResult::InUse;

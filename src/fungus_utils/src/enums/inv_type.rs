@@ -1,7 +1,7 @@
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, Display, EnumIter};
 use crate::errors::convert_error::ConvertError;
-use crate::{impl_try_error_i16};
+use crate::{impl_into_i16, impl_try_error_i16};
 
 
 #[repr(i16)]
@@ -19,6 +19,12 @@ pub enum InvType {
 impl Into<u8> for InvType {
     fn into(self) -> u8 {
         self as u8
+    }
+}
+
+impl Into<i16> for InvType {
+    fn into(self) -> i16 {
+        self as u8 as i16
     }
 }
 
@@ -47,4 +53,4 @@ impl From<&str> for InvType {
     }
 }
 
-impl_try_error_i16!(InvType);
+impl_into_i16!(InvType, InvType::None);

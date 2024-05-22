@@ -17,13 +17,18 @@ use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio::sync::mpsc::Sender;
 use tokio::{task, time};
 use tokio::time::Instant;
+use fungus_game::services::service_registry::ServiceRegistry;
 use fungus_net::packets::login_packets::login_packets::{on_send_connect};
 use fungus_net::packets::operation_handler::handle_packet;
+use fungus_net::server::server::Server;
 use fungus_net::session::client_session::ClientSession;
 
 pub struct LoginServer {
     channels: Arc<Mutex<HashMap<String, Arc<RwLock<ClientChannel>>>>>,
     sessions: Arc<Mutex<HashMap<String, ClientSession>>>,
+
+    server_instance: Arc<Server>,
+    service_registry: Arc<ServiceRegistry>
 }
 
 async fn read_packets(mut socket: tokio::io::ReadHalf<TcpStream>, tx: mpsc::Sender<Vec<u8>>) {
@@ -65,12 +70,14 @@ async fn write_packets(mut socket: tokio::io::WriteHalf<TcpStream>, mut rx: mpsc
 }
 
 impl LoginServer {
-    pub fn new() -> Self {
+    pub fn new(server_instance: Arc<Server>, service_registry: Arc<ServiceRegistry>) -> Self {
         LoginServer {
             channels: Arc::new(Mutex::new(
                 HashMap::<String, Arc<RwLock<ClientChannel>>>::new(),
             )),
             sessions: Arc::new(Mutex::new(HashMap::<String, ClientSession>::new())),
+            server_instance,
+            service_registry
         }
     }
     pub async fn listen(&mut self) {
@@ -104,7 +111,9 @@ impl LoginServer {
                                 Arc::new(Mutex::new(ClientSession::new(
                                     addr.to_string(),
                                     client_channel.clone(),
-                                    send_out_packet
+                                    send_out_packet,
+                                    self.service_registry.clone(),
+                                    self.server_instance.clone()
                                 )));
 
                             info!(

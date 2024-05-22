@@ -4,8 +4,7 @@ use fungus_utils::{fg_printc_error, fg_printc_info};
 use fungus_utils::utility::item_utility::is_equipment;
 use crate::entities::equipment::Equipment;
 use crate::entities::item::Item;
-use crate::game_data::game_data::GameData;
-use crate::game_data::game_info::etc_data::EtcData;
+use crate::game_data::etc_data::EtcData;
 use crate::game_data::item_data::ItemData;
 
 pub struct GameDataService {
@@ -26,7 +25,7 @@ impl GameDataService {
         let mut duration = curr_time - timer;
         fg_printc_info!("Loaded all items in {}ms", duration.as_millis());
 
-        timer = Instant::now()
+        timer = Instant::now();
         fg_printc_info!("Loading Etc");
         let mut etc_data = EtcData::new();
         if let Err(_) = etc_data.load_all() {
@@ -43,18 +42,13 @@ impl GameDataService {
         }
     }
 
-    pub fn fetch_equipment(&self, id: i32) -> Option<Equipment>{
-        match self.item_data.equipments.get(&id) {
-            Some(&eqp) => Some(eqp.clone()),
-            None => None
-        }
+
+    pub fn fetch_item(&self, id: i32) -> Option<Item> {
+        self.item_data.fetch_item(id)
     }
 
-    pub fn fetch_item(&self, id: i32) -> Option<Item>{
-        match self.item_data.item_info.get(&id) {
-            Some(&eqp) => Some(eqp.clone()),
-            None => None
-        }
+    pub fn fetch_equipment(&self, id: i32) -> Option<Equipment> {
+        self.item_data.fetch_equipment(id)
     }
 
     pub fn get_inv_type(&self, id: i32) -> InvType {

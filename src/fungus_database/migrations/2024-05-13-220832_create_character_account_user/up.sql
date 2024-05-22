@@ -107,12 +107,12 @@ CREATE TABLE characters (
                             avatar_look_id INTEGER NOT NULL REFERENCES avatar_looks(id),
                             character_stats_id INTEGER NOT NULL REFERENCES character_stats(id),
                             last_login_id INTEGER,
-                            equipped_inventory BIGINT REFERENCES inventories(id),
-                            equip_inventory BIGINT REFERENCES inventories(id),
-                            consume_inventory BIGINT REFERENCES inventories(id),
-                            install_inventory BIGINT REFERENCES inventories(id),
-                            etc_inventory BIGINT REFERENCES inventories(id),
-                            cash_inventory BIGINT REFERENCES inventories(id)
+                            equipped_inventory BIGINT NOT NULL REFERENCES inventories(id),
+                            equip_inventory BIGINT NOT NULL REFERENCES inventories(id),
+                            consume_inventory BIGINT NOT NULL REFERENCES inventories(id),
+                            install_inventory BIGINT NOT NULL REFERENCES inventories(id),
+                            etc_inventory BIGINT NOT NULL REFERENCES inventories(id),
+                            cash_inventory BIGINT NOT NULL REFERENCES inventories(id)
 );
 
 -- Character Logins Table

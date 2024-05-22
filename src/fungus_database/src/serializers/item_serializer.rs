@@ -2,8 +2,6 @@ use std::future::IntoFuture;
 use chrono::NaiveDateTime;
 use fungus_utils::enums::inv_type::InvType;
 use fungus_utils::enums::item_type::ItemType;
-use crate::models::equipment::Equipment;
-use crate::models::item::Item;
 
 pub struct ItemSerializer {
     pub id: i64, //big int postgres

@@ -1,11 +1,9 @@
-use std::collections::HashMap;
 use std::sync::{Arc};
 use tokio::sync::RwLock;
 use fungus_packet_utils::out_headers::OutHeader;
 use fungus_packet_utils::out_packet::OutPacket;
 use fungus_utils::constants::server_constants::{LOGIN_PORT, WORLD_CHANNELS};
 use fungus_utils::enums::server_status::ServerStatus;
-use fungus_utils::traits::encodable::Encodable;
 use crate::channel::Channel;
 
 #[derive(Clone)]
