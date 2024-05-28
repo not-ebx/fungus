@@ -61,6 +61,8 @@ CREATE TABLE character_stats (
                                  max_hp INTEGER NOT NULL DEFAULT 0,
                                  mp INTEGER NOT NULL DEFAULT 0,
                                  max_mp INTEGER NOT NULL DEFAULT 0,
+                                 map_id BIGINT NOT NULL DEFAULT 0,
+                                 portal INTEGER NOT NULL DEFAULT 0,
                                  pop INTEGER NOT NULL DEFAULT 0,
                                  willpower_level INTEGER NOT NULL DEFAULT 0,
                                  willpower_exp INTEGER NOT NULL DEFAULT 0,

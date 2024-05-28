@@ -9,6 +9,7 @@ use fungus_utils::enums::login_type::LoginType;
 use fungus_utils::types::fungus_time::FungusTime;
 use rand::{Rng, RngCore};
 use fungus_game::entities::account::Account;
+use fungus_game::entities::character::Character;
 use fungus_utils::enums::character_id_result::CharacterIDResult;
 use fungus_utils::enums::server_status::ServerStatus;
 
@@ -139,7 +140,7 @@ pub async fn on_send_account_info(user: &User) -> OutPacket {
     // Get the time
     let ms_time = FungusTime::from(user.created_at.clone());
 
-    out_packet.write(ms_time);
+    out_packet.write_long(ms_time.into());
 
     // Something to select the world
     out_packet.write_int(4);
@@ -152,21 +153,23 @@ pub async fn on_send_account_info(user: &User) -> OutPacket {
 
 }
 
-pub async fn on_select_world_result(user: &User, account: &Account) -> OutPacket {
+pub async fn on_select_world_result(account: &Account, characters: Vec<Character>) -> OutPacket {
     let mut out_packet = OutPacket::new(OutHeader::SelectWorldResult);
-    // TODO Return the characters
+    // Get the characters
 
     out_packet.write_byte(0); // Success code
-    //out_packet.write_byte(characters.len() as u8);
+    out_packet.write_byte(characters.len() as u8);
     out_packet.write_byte(0);
-    /*for character in characters.iter() {
-        // TODO Encode character data.
-        //out_packet.write_byte(0); // Family stuff.
-    }*/
+    for character in characters.iter() {
+        out_packet.write(character);
+        out_packet.write_byte(0); // Family stuff.
+        // TODO Encode ranking
+        out_packet.write_byte(0);
+    }
 
     out_packet.write_byte(2); // bLoginOpt
     out_packet.write_byte(1);
-    out_packet.write_int(account.characters.len() as i32);
+    out_packet.write_int(3); // TODO get character slotds.
     out_packet.write_int(0);
 
     out_packet
@@ -176,6 +179,16 @@ pub async fn on_check_duplicated_id_result(name: &str, result: CharacterIDResult
     let mut out_packet = OutPacket::new(OutHeader::CheckDuplicatedIdResult);
     out_packet.write_string(name.to_string());
     out_packet.write_byte(result as u8);
+
+    out_packet
+}
+
+pub async fn on_create_new_character_result(chr: Character) -> OutPacket {
+    let mut out_packet = OutPacket::new(OutHeader::CreateNewCharacterResult);
+
+    // TODO: for now is 0 = success
+    out_packet.write_byte(0);
+    out_packet.write(&chr);
 
     out_packet
 }

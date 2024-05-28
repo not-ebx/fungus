@@ -4,6 +4,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use core::fmt;
 use std::fmt::Formatter;
 
+#[derive(Debug, Clone)]
 pub struct InPacket {
     pub(crate) opcode: InHeader,
     packet: Vec<u8>,
@@ -36,6 +37,14 @@ impl InPacket {
             opcode: InHeader::from(opcode_short),
             cursor: 2,
         }
+    }
+
+    pub fn length(&self) -> usize {
+        self.packet.len()
+    }
+
+    fn remaining(&self) -> usize {
+        return self.length() - self.cursor
     }
 
     fn get_opcode(&self) -> i16 {
@@ -71,17 +80,17 @@ impl InPacket {
         if self.cursor + 4 > self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
-            let bytes = self.packet[self.cursor..self.cursor + 2].to_vec();
+            let bytes = self.packet[self.cursor..self.cursor + 4].to_vec();
             self.cursor += 4;
             Ok(LittleEndian::read_i32(&bytes))
         }
     }
 
     pub fn read_long(&mut self) -> Result<i64, PacketError> {
-        if self.cursor + 8 >= self.packet.len() {
+        if self.cursor + 8 > self.packet.len() {
             Err(PacketError::OutOfBounds)
         } else {
-            let bytes = self.packet[self.cursor..self.cursor + 2].to_vec();
+            let bytes = self.packet[self.cursor..self.cursor + 8].to_vec();
             self.cursor += 8;
             Ok(LittleEndian::read_i64(&bytes))
         }
@@ -94,7 +103,8 @@ impl InPacket {
         } else {
             let bytes = &self.packet[self.cursor..self.cursor + str_length];
             self.cursor += str_length;
-            Ok(std::str::from_utf8(bytes).map_err(PacketError::InvalidUtf8)?)
+            let the_str = std::str::from_utf8(bytes).map_err(PacketError::InvalidUtf8)?;
+            Ok(the_str)
         }
     }
 

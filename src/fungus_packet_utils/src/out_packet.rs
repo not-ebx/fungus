@@ -77,8 +77,8 @@ impl OutPacket {
         LittleEndian::read_i16(opcode_bytes)
     }
 
-    pub fn write<T: Encodable>(&mut self, value: T) {
-        value.encode(&mut self);
+    pub fn write<T: Encodable>(&mut self, value: &T) {
+        value.encode(&mut *self);
     }
 
     pub fn write_bool(&mut self, value: bool) {
@@ -111,6 +111,15 @@ impl OutPacket {
 
         self.write_short(length_bytes as i16);
         let _ = self.packet.write_all(&str_bytes);
+    }
+
+    pub fn write_exact_string(&mut self, value: String, length: u16) {
+        let length_bytes = length as usize;
+        let mut bytes_str: Vec<u8> = value.bytes().take(length_bytes).collect();
+        bytes_str.resize(length as usize, 0x00);
+
+        self.write_bytes(bytes_str.as_slice());
+
     }
 
     pub fn write_bytes(&mut self, value: &[u8]) {

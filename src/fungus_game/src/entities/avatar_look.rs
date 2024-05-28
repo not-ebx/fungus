@@ -1,3 +1,4 @@
+use fungus_database::serializers::avatar_look_serializer::AvatarLookSerializer;
 use fungus_packet_utils::out_packet::OutPacket;
 use fungus_packet_utils::traits::encodable::Encodable;
 use crate::game_data::game_info::item_utilities::get_body_part_from_item;
@@ -18,6 +19,25 @@ pub struct AvatarLook {
     // Face Accessories
     pub demon_slayer_mark: i32,
 
+}
+
+impl From<AvatarLookSerializer> for AvatarLook {
+    fn from(value: AvatarLookSerializer) -> Self {
+        AvatarLook {
+            id: value.id,
+            face: value.face,
+            hair: value.hair,
+            skin: value.skin,
+            job: value.job,
+            gender: value.gender,
+            weapon_id: value.weapon_id,
+            sub_weapon_id: value.sub_weapon_id,
+            weapon_sticker_id: value.weapon_sticker_id,
+            elf_ear: value.elf_ear,
+            ears: value.ears,
+            demon_slayer_mark: value.demon_slayer_mark,
+        }
+    }
 }
 
 impl Encodable for AvatarLook {

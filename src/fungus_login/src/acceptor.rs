@@ -24,8 +24,7 @@ use fungus_net::server::server::Server;
 use fungus_net::session::client_session::ClientSession;
 
 pub struct LoginServer {
-    channels: Arc<Mutex<HashMap<String, Arc<RwLock<ClientChannel>>>>>,
-    sessions: Arc<Mutex<HashMap<String, ClientSession>>>,
+    sessions: Arc<Mutex<HashMap<String, Arc<Mutex<ClientSession>>>>>,
 
     server_instance: Arc<Server>,
     service_registry: Arc<ServiceRegistry>
@@ -36,12 +35,14 @@ async fn read_packets(mut socket: tokio::io::ReadHalf<TcpStream>, tx: mpsc::Send
     loop {
         match socket.read(&mut buf).await {
             Ok(0) => {
-                error!("Size 0 buffer, ded maybe lol owned :dab:");
+                error!("Client dead");
+                tx.closed().await;
                 break;
             }
             Ok(_) => {
                 if tx.send(buf.to_vec()).await.is_err() {
                     error!("Channel send error, likely receiver has dropped.");
+                    tx.closed().await;
                     break;
                 }
             }
@@ -62,6 +63,8 @@ async fn write_packets(mut socket: tokio::io::WriteHalf<TcpStream>, mut rx: mpsc
                     packet.as_slice()
                 ).await {
                     error!("An error occurred trying to write the Outbound Packet: {}", e);
+                    rx.close();
+                    socket.shutdown().await.expect("Could not close socket.");
                     break;
                 }
             }
@@ -72,10 +75,7 @@ async fn write_packets(mut socket: tokio::io::WriteHalf<TcpStream>, mut rx: mpsc
 impl LoginServer {
     pub fn new(server_instance: Arc<Server>, service_registry: Arc<ServiceRegistry>) -> Self {
         LoginServer {
-            channels: Arc::new(Mutex::new(
-                HashMap::<String, Arc<RwLock<ClientChannel>>>::new(),
-            )),
-            sessions: Arc::new(Mutex::new(HashMap::<String, ClientSession>::new())),
+            sessions: Arc::new(Mutex::from(HashMap::new())),
             server_instance,
             service_registry
         }
@@ -116,11 +116,19 @@ impl LoginServer {
                                     self.server_instance.clone()
                                 )));
 
-                            info!(
-                                "New connection to login_server IP {}; SESS_ID {};",
-                                addr.to_string(),
-                                "asd".to_string()
-                            );
+                            let client_id = client_session.clone().lock().await.session_id.to_string();
+                            {
+                                self.sessions.lock().await.insert(
+                                    client_id.clone(), client_session.clone()
+                                );
+                                info!(
+                                    "New connection to login_server IP {}; SESS_ID {};",
+                                    addr.to_string(),
+                                    client_id
+                                );
+                            }
+
+
                             // Write handshake
 
                             tokio::spawn(async move {

@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::ops::Deref;
 use std::sync::{Arc};
 use std::time::Duration;
 use log::{debug, error, info};
@@ -25,7 +26,7 @@ use crate::packets::operation_handler::handle_packet;
 use crate::server::server::Server;
 
 pub struct ClientSession {
-    session_id: Uuid,
+    pub session_id: Uuid,
     pub ip: String,
     pub machine_id: String,
     client_channel: Arc<RwLock<ClientChannel>>,
@@ -119,6 +120,34 @@ impl ClientSession {
 
     pub async fn get_riv(&self) -> [u8; 16] {
         self.client_channel.read().await.packet_decoder.lock().await.get_riv()
+    }
+
+    pub fn get_account_id(&self) -> i32 {
+        if self.account.is_some() {
+            self.account.as_ref().unwrap().id
+        } else {
+            -1
+        }
+    }
+
+    pub fn get_user_id(&self) -> i32 {
+        if self.user.is_some() {
+            self.user.as_ref().unwrap().id
+        } else {
+            -1
+        }
+    }
+
+    pub fn get_account_ref(&self) -> Option<&Account> {
+        if self.account.is_some() {
+            let acc= self.account.as_ref().unwrap();
+            return Some(acc);
+        }
+        None
+    }
+
+    pub async fn close(&self) {
+        self.sender.closed().await;
     }
 
 }

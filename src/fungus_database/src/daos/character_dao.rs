@@ -1,5 +1,8 @@
-use sqlx::{Error, PgPool, Postgres, Transaction};
+use sqlx::{Column, Error, PgPool, Postgres, Row, Transaction};
+use crate::serializers::avatar_look_serializer::AvatarLookSerializer;
 use crate::serializers::character_serializer::CharacterSerializer;
+use crate::serializers::character_select_serializer::CharacterSelectSerializer;
+use crate::serializers::character_stats_serializer::CharacterStatsSerializer;
 
 pub struct CharacterDAO;
 
@@ -40,6 +43,34 @@ impl CharacterDAO {
             etc_inventory_id,
             cash_inventory_id,
         ).fetch_one(&mut **tx).await
+    }
+
+    pub async fn get_characters_for_login_screen(&self, pool: &PgPool, account_id: i32) -> Vec<CharacterSelectSerializer> {
+        let chara_rows = sqlx::query(
+            r#"
+            SELECT character.*, avatar_look.*, character_stats.*
+            FROM characters character
+            JOIN avatar_looks avatar_look ON character.avatar_look_id = avatar_look.id
+            JOIN character_stats character_stats ON character.character_stats_id = character_stats.id
+            "#
+        ).fetch_all(pool).await.unwrap();
+
+        let charas: Vec<CharacterSelectSerializer> = chara_rows.iter().map(|row| {
+            let character= CharacterSerializer::try_from(row).ok();
+            let character_stats= CharacterStatsSerializer::try_from(row).ok();
+            let avatar_look = AvatarLookSerializer::try_from(row).ok();
+            if character.is_none() || character_stats.is_none() || avatar_look.is_none() {
+                return None
+            }
+            Some(CharacterSelectSerializer{
+                character: character.unwrap(),
+                character_stats: character_stats.unwrap(),
+                avatar_look: avatar_look.unwrap()
+            })
+        }).filter_map(|x| x).collect();
+
+        print!("Lol");
+        charas
     }
 
 }

@@ -7,8 +7,8 @@ impl CharacterStatsDAO {
     pub async fn create_query(&self, tx: &mut Transaction<'_, Postgres>, name: &str, gender: u8, job: i32, sub_job: i16) -> Result<CharacterStatsSerializer, Error> {
         sqlx::query_as!(
             CharacterStatsSerializer,
-            "INSERT INTO character_stats (name, gender, job, sub_job, str, dex, int, luk, hp, max_hp, mp, max_mp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
-            name.to_string(), gender as i16, job, sub_job as i32, 12, 5, 4, 4, 50, 50, 5, 5
+            "INSERT INTO character_stats (name, gender, job, sub_job, str, dex, int, luk, hp, max_hp, mp, max_mp, map_id, portal) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *",
+            name.to_string(), gender as i16, job, sub_job as i32, 12, 5, 4, 4, 50, 50, 5, 5, 10000, 0
         ).fetch_one(&mut **tx).await
     }
 

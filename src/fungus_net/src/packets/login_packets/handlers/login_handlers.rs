@@ -9,7 +9,7 @@ use fungus_packet_utils::packet_errors::PacketError;
 use fungus_utils::enums::character_id_result::CharacterIDResult;
 use fungus_utils::enums::login_type::LoginType;
 use fungus_utils::enums::server_status::ServerStatus;
-use crate::packets::login_packets::login_packets::{on_check_duplicated_id_result, on_check_password_result, on_select_world_result, on_send_account_info, on_send_recommended_world_message, on_send_world_information_end, on_send_world_status};
+use crate::packets::login_packets::login_packets::{on_check_duplicated_id_result, on_check_password_result, on_create_new_character_result, on_select_world_result, on_send_account_info, on_send_recommended_world_message, on_send_world_information_end, on_send_world_status};
 
 pub async fn handle_check_login_auth_info(
     session: &mut ClientSession,
@@ -133,12 +133,29 @@ pub async fn handle_select_world(session: &mut ClientSession, in_packet: &mut In
         session.account = Some(account.unwrap());
         session.world_id = world_id as i16;
     }
+
+    let account = {
+        session.get_account_ref().unwrap().clone()
+    };
+    let characters = session.service_registry.get_character_service().get_characters_for_selection(
+        account.id
+    ).await;
+
     // Better top handle channel stuff form the server instance itself.
     //session.channel = SERVER_INSTANCE.read().await.get_channel(world_id as i16, channel as i32).await
-    session.send_packet(&on_send_account_info(session.user.as_ref().unwrap()).await).await.unwrap();
-    session.send_packet(&on_select_world_result(session.user.as_ref().unwrap(), session.account.as_ref().unwrap()).await).await.unwrap();
-    Ok(())
+    let send_acc_info_packet = &on_send_account_info(
+        session.user.as_ref().unwrap()
+    ).await;
 
+    let world_result_packet = &on_select_world_result(
+        account,
+        characters
+    ).await;
+
+    session.send_packet(send_acc_info_packet).await.unwrap();
+    session.send_packet(world_result_packet).await?;
+
+    Ok(())
 }
 
 pub async fn handle_check_duplicate_id(session: &mut ClientSession, in_packet: &mut InPacket) -> Result<(), PacketError> {
@@ -154,5 +171,46 @@ pub async fn handle_check_duplicate_id(session: &mut ClientSession, in_packet: &
 
     session.send_packet(
         &on_check_duplicated_id_result(character_name, check_result).await
+    ).await
+}
+
+pub async fn handle_create_new_character(session: &mut ClientSession, in_packet: &mut InPacket) -> Result<(), PacketError> {
+    let character_name = in_packet.read_string()?.to_string();
+    let job = in_packet.read_int()?;
+    let sub_job = in_packet.read_short()?;
+    let gender = in_packet.read_byte()?;
+    let skin = in_packet.read_byte()?;
+    let item_len = in_packet.read_byte()?;
+
+    let mut items = Vec::with_capacity((item_len - 2) as usize);
+
+    let face = in_packet.read_int()?;
+    let hair = in_packet.read_int()?;
+
+    for _ in 0..item_len-2 {
+        let item_id = in_packet.read_int()?;
+        items.push(item_id);
+    }
+
+    // TODO check if the items, face, skin etc are allowed. Meaning, they are in the starting items and are valid values
+
+    // TODO check if the name is valid, ever after choosing it
+
+    // TODO check all races and stuff
+    let new_character = session.service_registry.get_character_service().create_character(
+        session.service_registry.get_game_data_service(),
+        session.get_account_id(),
+        character_name.as_str(),
+        job,
+        sub_job,
+        gender,
+        skin as i32,
+        face,
+        hair,
+        items
+    ).await.expect("What");
+
+    session.send_packet(
+        &on_create_new_character_result(new_character).await
     ).await
 }

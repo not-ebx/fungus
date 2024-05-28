@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use log::info;
 use sqlx::Error;
 use fungus_database::daos::item_dao::CreateGameItem;
 use fungus_database::daos::avatar_look_dao::AvatarLookDAO;
@@ -7,10 +8,12 @@ use fungus_database::daos::character_stats_dao::CharacterStatsDAO;
 use fungus_database::daos::inventory_dao::InventoryDAO;
 use fungus_database::daos::item_dao::ItemDAO;
 use fungus_database::database::get_db;
+use fungus_database::serializers::character_select_serializer::CharacterSelectSerializer;
 use fungus_database::serializers::equipment_serializer::EquipmentSerializer;
 use fungus_database::serializers::item_serializer::ItemSerializer;
 use fungus_utils::enums::inv_type::InvType;
 use crate::entities::character::Character;
+use crate::errors::service_errors::ServiceError;
 use crate::services::game_data_service::GameDataService;
 
 pub struct CharacterService {
@@ -31,6 +34,17 @@ impl CharacterService {
             item_dao: ItemDAO,
         }
     }
+
+    pub async fn get_characters_for_selection(&self, account_id: i32) -> Vec<Character> {
+        let pool = &*get_db();
+        let ch_ser = CharacterDAO.get_characters_for_login_screen(pool, account_id).await;
+        let characters: Vec<Character> = ch_ser.into_iter()
+            .map(|ch| Character::from(ch))
+            .collect();
+
+        characters
+    }
+
     pub async fn create_character(
         &self,
         game_data_service: Arc<GameDataService>,
@@ -43,7 +57,7 @@ impl CharacterService {
         face: i32,
         hair: i32,
         items: Vec<i32>
-    ) -> Result<(), Error> {
+    ) -> Result<Character, ServiceError> {
         let pool = &*get_db();
         let mut tx = pool.begin().await?;
 
@@ -111,7 +125,34 @@ impl CharacterService {
             }
         }
 
-        tx.commit().await
+        // Finally, create the character
+
+        //         // Equipped, equip, use, install, etc, cash = 6
+        let new_character = self.character_dao.create(
+            &mut tx,
+            account_id,
+            character_stats.id,
+            avatar_look.id,
+            inventories[0],
+            inventories[1],
+            inventories[2],
+            inventories[3],
+            inventories[4],
+            inventories[5],
+        ).await?;
+
+        info!("Created character {} with id {}", character_stats.name.clone(), new_character.id);
+
+        tx.commit().await;
+
+        // since it's created, we now create the character and return it
+        let csch_serialized = CharacterSelectSerializer {
+            character: new_character,
+            avatar_look,
+            character_stats
+        };
+
+        Ok(Character::from(csch_serialized))
     }
 
     pub async fn is_duplicated_id(&self, character_name: &str) -> bool {

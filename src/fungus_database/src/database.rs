@@ -4,11 +4,12 @@ use sqlx::postgres::{PgPool, PgPoolOptions};
 use once_cell::sync::Lazy;
 
 static DATABASE_POOL: Lazy<Arc<PgPool>> = Lazy::new(|| {
-    let database_url= env::var("DATABASE_URL").expect("DATABASE_URL missing in .env file");
+    //let database_url= env::var("DATABASE_URL").expect("DATABASE_URL missing in .env file");
+    let database_url = "postgres://root:password@localhost/mushemu";
     Arc::new(
         PgPoolOptions::new()
             .max_connections(5)
-            .connect_lazy(database_url.as_str())
+            .connect_lazy(database_url)
             .expect("cant connec to db lol")
     )
 });
