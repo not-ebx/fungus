@@ -25,7 +25,6 @@ use fungus_net::session::client_session::ClientSession;
 
 pub struct LoginServer {
     sessions: Arc<Mutex<HashMap<String, Arc<Mutex<ClientSession>>>>>,
-
     server_instance: Arc<Server>,
     service_registry: Arc<ServiceRegistry>
 }
@@ -64,7 +63,9 @@ async fn write_packets(mut socket: tokio::io::WriteHalf<TcpStream>, mut rx: mpsc
                 ).await {
                     error!("An error occurred trying to write the Outbound Packet: {}", e);
                     rx.close();
-                    socket.shutdown().await.expect("Could not close socket.");
+                    if socket.shutdown().await.is_err() {
+                        error!("Could not shut down socket, it may already have been closed.");
+                    }
                     break;
                 }
             }

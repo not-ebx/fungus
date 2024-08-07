@@ -11,4 +11,38 @@ impl AvatarLookDAO {
             face, hair, skin, job, gender, false, 0, 0
         ).fetch_one(&mut **tx).await
     }
+
+    pub async fn update(&self, tx: &mut Transaction<'_, Postgres>, avatar_look: AvatarLookSerializer) -> Result<(), Error> {
+        let _ = sqlx::query!(
+           r#"
+            UPDATE avatar_looks
+            SET face = $1,
+                hair = $2,
+                skin = $3,
+                job = $4,
+                gender = $5,
+                weapon_id = $6,
+                sub_weapon_id = $7,
+                weapon_sticker_id = $8,
+                elf_ear = $9,
+                ears = $10,
+                demon_slayer_mark = $11
+            WHERE id = $12
+            "#,
+            avatar_look.face,
+            avatar_look.hair,
+            avatar_look.skin,
+            avatar_look.job,
+            avatar_look.gender,
+            avatar_look.weapon_id,
+            avatar_look.sub_weapon_id,
+            avatar_look.weapon_sticker_id,
+            avatar_look.elf_ear,
+            avatar_look.ears,
+            avatar_look.demon_slayer_mark,
+            avatar_look.id
+        ).execute(&mut **tx).await?;
+
+        Ok(())
+    }
 }

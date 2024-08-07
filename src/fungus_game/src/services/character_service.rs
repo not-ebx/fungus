@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use log::info;
 use sqlx::Error;
@@ -13,7 +14,10 @@ use fungus_database::serializers::equipment_serializer::EquipmentSerializer;
 use fungus_database::serializers::item_serializer::ItemSerializer;
 use fungus_utils::enums::inv_type::InvType;
 use crate::entities::character::Character;
+use crate::entities::equipment::Equipment;
+use crate::entities::inventory::Inventory;
 use crate::errors::service_errors::ServiceError;
+use crate::game_data::game_info::item_utilities::is_weapon;
 use crate::services::game_data_service::GameDataService;
 
 pub struct CharacterService {
@@ -38,11 +42,30 @@ impl CharacterService {
     pub async fn get_characters_for_selection(&self, account_id: i32) -> Vec<Character> {
         let pool = &*get_db();
         let ch_ser = CharacterDAO.get_characters_for_login_screen(pool, account_id).await;
+
+        // Get the visible items for all of them.
+        let mut visible_items: HashMap<i32, Vec<i32>> = HashMap::new();
+        for ch in &ch_ser {
+            let ch_id = ch.character.id;
+            let items = self.get_character_visible_equipment(ch_id).await;
+            visible_items.insert(ch_id, items);
+        }
+
         let characters: Vec<Character> = ch_ser.into_iter()
-            .map(|ch| Character::from(ch))
+            .map(|ch| {
+                let mut chara = Character::from(ch);
+                chara.avatar_look.visible_equipment = visible_items.get(&chara.id).unwrap_or(&Vec::default()).to_owned();
+                chara
+            })
             .collect();
 
+        // For each character, we need to get the equipped items.
         characters
+    }
+
+    pub async fn get_character_visible_equipment(&self, character_id: i32) -> Vec<i32> {
+        let pool = &*get_db();
+        self.inventory_dao.find_characters_equipped_items(pool, character_id).await
     }
 
     pub async fn create_character(
@@ -62,7 +85,7 @@ impl CharacterService {
         let mut tx = pool.begin().await?;
 
         // TODO handle mercedes creation and shit lol
-        let avatar_look = self.avatar_look_dao.create_query(
+        let mut avatar_look = self.avatar_look_dao.create_query(
             &mut tx,
             face,
             hair,
@@ -84,6 +107,7 @@ impl CharacterService {
             &mut tx,
         ).await?;
 
+        let mut visible_equipment: Vec<i32> = vec![];
 
         for item in items.iter() {
             let inv_type = game_data_service.get_inv_type(item.clone());
@@ -100,6 +124,13 @@ impl CharacterService {
                         self.item_dao.create_item(&mut tx, &mut item_ser).await?;
                         eq_ser.item_id = item_ser.id.clone();
                         self.item_dao.create_item(&mut tx, &mut eq_ser).await?;
+
+                        if is_weapon(item_ser.item_id) {
+                            avatar_look.weapon_sticker_id = Some(item_ser.item_id);
+                            avatar_look.weapon_id = Some(item_ser.item_id);
+                        }
+                        visible_equipment.push(item_ser.item_id);
+
                     }
                 }
                 InvType::None | InvType::Equipped => {},
@@ -143,7 +174,7 @@ impl CharacterService {
 
         info!("Created character {} with id {}", character_stats.name.clone(), new_character.id);
 
-        tx.commit().await;
+        let _ = tx.commit().await;
 
         // since it's created, we now create the character and return it
         let csch_serialized = CharacterSelectSerializer {
@@ -152,7 +183,10 @@ impl CharacterService {
             character_stats
         };
 
-        Ok(Character::from(csch_serialized))
+        let mut chara = Character::from(csch_serialized);
+        chara.avatar_look.visible_equipment = visible_equipment;
+
+        Ok(chara)
     }
 
     pub async fn is_duplicated_id(&self, character_name: &str) -> bool {
@@ -163,6 +197,14 @@ impl CharacterService {
             character_name
         ).await
     }
+
+    pub async fn get_character(&self, character_id: i32) -> Result<Character, ServiceError> {
+        let pool = &*get_db();
+        let chara = self.character_dao.get_character_by_id(pool, character_id).await?;
+
+        Ok(Character::from(chara))
+    }
+
 
     pub async fn get_account_characters(&self, account_id: i32) -> Vec<Character> {
         vec![]

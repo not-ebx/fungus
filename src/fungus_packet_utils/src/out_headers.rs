@@ -25,8 +25,8 @@ pub enum OutHeader {
     MigrateCommand = 16,
     AliveReq = 17,
     // .. more xd
-    LatestConnectedWorld = 27,
-    RecommendedWorldMessage = 28,
+    LatestConnectedWorld = 24,
+    RecommendedWorldMessage = 25,
     UNKNOWN = -1,
 }
 

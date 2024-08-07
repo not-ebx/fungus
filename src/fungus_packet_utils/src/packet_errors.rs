@@ -8,11 +8,11 @@ pub enum PacketError {
     UnknownHeader(String),
     UnimplementedPacket(String),
     InvalidUtf8(Utf8Error),
-    InvalidCipher(),
-    InvalidSession(),
+    InvalidCipher,
+    InvalidSession,
 
     // High level errors..?
-    CommunicationError()
+    CommunicationError
 }
 
 impl fmt::Display for PacketError {
@@ -36,10 +36,10 @@ impl fmt::Display for PacketError {
             PacketError::UnimplementedPacket(value) => {
                 write!(f, "Error: The packet is not implemented ({})", value)
             }
-            PacketError::CommunicationError() => {
+            PacketError::CommunicationError => {
                 write!(f, "Error: Could not send the packet")
             }
-            PacketError::InvalidSession() => {
+            PacketError::InvalidSession => {
                 write!(f, "Error: Invalid session!!")
             }
             _ => {

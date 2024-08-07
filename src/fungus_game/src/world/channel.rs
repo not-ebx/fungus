@@ -1,8 +1,9 @@
 use std::cmp::max;
 use std::collections::HashMap;
 use fungus_utils::constants::server_constants::MAX_CHANNEL_CONNECTIONS;
-use crate::world::World;
+use crate::world::world::World;
 
+#[derive(Clone)]
 pub struct Channel {
     pub id: i32,
     pub world_id: i32,
@@ -11,8 +12,9 @@ pub struct Channel {
     max_connections: i32,
     pub is_adult_channel: bool,
 
-    // TODO Create characters
     characters: HashMap<i32, i32>,
+    // Session ID to Character ID
+    current_players: HashMap<String, i32>
 }
 
 impl Channel {
@@ -25,6 +27,7 @@ impl Channel {
             max_connections: MAX_CHANNEL_CONNECTIONS,
             is_adult_channel: false,
             characters: Default::default(),
+            current_players: Default::default()
         }
     }
 

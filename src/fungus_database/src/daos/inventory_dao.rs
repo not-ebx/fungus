@@ -1,4 +1,4 @@
-use sqlx::{Postgres, Transaction};
+use sqlx::{PgPool, Postgres, Transaction};
 use fungus_utils::constants::game_constants::{DEFAULT_INVENTORY_SIZE, MAX_INVENTORY_SIZE};
 use fungus_utils::enums::inv_type::InvType;
 use crate::serializers::inventory_serializer::InventorySerializer;
@@ -13,6 +13,22 @@ impl InventoryDAO {
             "INSERT INTO inventories (slots, inv_type) VALUES ($1, $2) RETURNING *",
             slots, i16_inv_type
         ).fetch_one(&mut **tx).await
+    }
+
+    pub async fn find_characters_equipped_items(&self, pool: &PgPool, character_id: i32) -> Vec<i32> {
+        sqlx::query_scalar!(
+            r#"
+            SELECT
+                items.item_id
+            FROM
+                characters
+            JOIN
+                items ON characters.equipped_inventory = items.inventory_id
+            WHERE
+                characters.id = $1
+            "#,
+            character_id
+        ).fetch_all(pool).await.unwrap_or(vec![])
     }
 
     // TODO add character details.

@@ -4,3 +4,5 @@ pub mod user_service;
 pub mod account_service;
 pub mod service_registry;
 pub mod game_data_service;
+mod world_service;
+mod channel_service;

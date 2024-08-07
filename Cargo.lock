@@ -557,6 +557,8 @@ dependencies = [
  "rust_nx 0.1.4",
  "serde",
  "sqlx",
+ "strum",
+ "strum_macros",
  "tokio",
  "tokio-postgres",
 ]
@@ -594,7 +596,6 @@ dependencies = [
  "fungus_game",
  "fungus_packet_utils",
  "fungus_utils",
- "fungus_world",
  "log",
  "once_cell",
  "rand 0.9.0-alpha.1",
@@ -644,15 +645,6 @@ dependencies = [
  "strum",
  "strum_macros",
  "syn 2.0.60",
-]
-
-[[package]]
-name = "fungus_world"
-version = "0.1.0"
-dependencies = [
- "fungus_packet_utils",
- "fungus_utils",
- "tokio",
 ]
 
 [[package]]

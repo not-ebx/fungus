@@ -10,6 +10,8 @@ use fungus_utils::types::fungus_time::FungusTime;
 use rand::{Rng, RngCore};
 use fungus_game::entities::account::Account;
 use fungus_game::entities::character::Character;
+use fungus_game::world::channel::Channel;
+use fungus_game::world::world::World;
 use fungus_utils::enums::character_id_result::CharacterIDResult;
 use fungus_utils::enums::server_status::ServerStatus;
 
@@ -70,45 +72,68 @@ pub fn on_success_login(user: &User) -> OutPacket {
     out_packet.write_byte(LoginType::Success as u8);
     out_packet.write_byte(0);
     out_packet.write_int(0);
+
     out_packet.write_int(user.id);
     out_packet.write_byte(user.gender as u8);
     // Todo gotta handle this better, for the meantime, admin account will work as this
-    out_packet.write_bool(user.account_type > 0); // Something about gm..?
-    out_packet.write_short(0); // Gm level i think
-    out_packet.write_bool(user.account_type > 0); // Something about admin account idk
+    out_packet.write_bool(user.account_type > 0); // GradeCode
+    out_packet.write_short(0); // SubGradeCode
+    out_packet.write_byte(0); // nCountryId
     out_packet.write_string(user.username.clone());
-    out_packet.write_byte(3); // 3 for new accds .. ?
-    out_packet.write_byte(0); // quiet ban
-    out_packet.write_long(0); // quiet ban time
-    out_packet.write_byte(1); // idk?
-
-    // Get the time
+    out_packet.write_byte(0); // nPurchaseExp
+    out_packet.write_byte(0); // ChatUnblockReason
+    out_packet.write_long(0); // quiet ban time; Check unblock date
+    // Register time
     let ms_time = FungusTime::from(user.created_at.clone());
-
     out_packet.write_long(ms_time.into());
 
     // Something to select the world
-    out_packet.write_int(4);
+    out_packet.write_int(4); // nNumOfcharacter
     out_packet.write_byte(1); // Pin Disabled
     out_packet.write_byte(2); // Pic Disabled, 2
 
     let mut rng = rand::thread_rng();
     let random_long = rng.next_u64() as i64; // TODO gotta create a randomizer :)
     out_packet.write_long(random_long);
-
     out_packet
 }
 
 pub fn on_send_world_information_end() -> OutPacket{
     let mut out_packet = OutPacket::new(OutHeader::WorldInformation);
-    out_packet.write_int(255);
+    out_packet.write_byte(0xFF);
     out_packet
 }
+
+pub fn on_world_info(world: &World, channels: Vec<Channel>) -> OutPacket {
+    let mut packet = OutPacket::new(OutHeader::WorldInformation);
+    packet.write_byte(world.id as u8);
+    packet.write_string(world.name.clone());
+    packet.write_byte(0); // nWorldState
+    packet.write_string(world.event_message.clone()); // World Event Description
+    packet.write_short(world.exp_wse as i16);
+    packet.write_short(world.drop_wse as i16);
+    packet.write_bool(world.char_creation_blocked);
+
+    // Encode Channels
+    packet.write_byte(world.channels as u8);
+    for channel in channels {
+        packet.write_string(channel.name.clone());
+        packet.write_int(channel.get_gauge_px());
+        packet.write_byte(channel.world_id as u8);
+        packet.write_byte(channel.id as u8);
+        packet.write_bool(channel.is_adult_channel);
+    }
+
+    packet.write_short(0); // nBalloonCount
+
+    packet
+}
+
 
 // TODO Implement this, for the meantime no message :)
 pub fn on_send_recommended_world_message(recommended_world_id: i32, message: String) -> OutPacket {
     let mut out_packet = OutPacket::new(OutHeader::RecommendedWorldMessage);
-    out_packet.write_bool(message.len() > 0); // is message empty?
+    out_packet.write_bool(message.len() > 0); // is message empty
     out_packet.write_int(recommended_world_id); // World id
     out_packet.write_string(message);
 
@@ -159,7 +184,6 @@ pub async fn on_select_world_result(account: &Account, characters: Vec<Character
 
     out_packet.write_byte(0); // Success code
     out_packet.write_byte(characters.len() as u8);
-    out_packet.write_byte(0);
     for character in characters.iter() {
         out_packet.write(character);
         out_packet.write_byte(0); // Family stuff.
@@ -169,7 +193,7 @@ pub async fn on_select_world_result(account: &Account, characters: Vec<Character
 
     out_packet.write_byte(2); // bLoginOpt
     out_packet.write_byte(1);
-    out_packet.write_int(3); // TODO get character slotds.
+    out_packet.write_int(account.characters.len() as i32); // TODO get character slotds.
     out_packet.write_int(0);
 
     out_packet

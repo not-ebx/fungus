@@ -8,32 +8,43 @@ use once_cell::sync::Lazy;
 #[derive(Display, EnumIter, AsRefStr, PartialEq, Eq, Debug, Clone, Copy, Hash)]
 pub enum InHeader {
     BeginSocket = 0,
-
+    CheckLoginAuthInfo = 1,
+    GuestLogin = 2,
+    AccountInfoRequest = 3,
+    WorldInfoRequest = 4,
+    SelectWorld = 5,
+    WorldStatusRequest = 6, // Check user limit
     EULA = 7,
+    SetGender = 8,
+    CheckPinCode = 9,
+    UpdatePinCode = 10,
+    WorldListRequest = 11, // WorldRequest
+    RedisplayWorldList = 12, // Logout world
+    ViewAllChar = 13,
+    SelectCharacterByVAC = 14,
+    VACFlagSet = 15,
+
+    CheckTransferWorldPossible = 18, // ?? Unused, most likely.
+    CharSelect = 19,
+    MigrateIn = 20,
+    CheckDuplicateID = 21,
+    CreateNewCharacter = 22,
+    CreateNewCharacterInCS = 23,
 
     // OnLogin
-    WorldInfoRequest = 11,
-    CharSelect = 12,
-    VersionVerify = 20,
-    CheckLoginAuthInfo = 21,
-    GuestLogin = 22,
-
+    VersionVerify = 34, // CreateSecurityHandle
     SelectPreviousWorld = 24,
-    SelectWorld = 25,
-    WorldStatusRequest = 26,
+    CharSelectNoPic = 38, // CreateNewCharaterEx
 
-    WorldListRequest = 31,
-    RedisplayWorldList = 32,
+    Pong = 25, // Alive Ack?
 
-    CharSelectNoPic = 39,
+    ClientStart = 27, // Security Packet
+    ClientError = 36, // Exception Log
 
-    CheckDuplicateID = 41,
-    CreateNewCharacter = 42,
-
-    Pong = 46,
-
-    ClientStart = 56,
-    ClientError = 59,
+    ///
+    ///
+    ///
+    UpdateScreenSetting = 218,
 
     UNKNOWN = -1,
 }

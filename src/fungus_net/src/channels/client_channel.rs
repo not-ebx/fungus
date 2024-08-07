@@ -71,7 +71,9 @@ impl ClientChannel {
                 _ = interval.tick() => {
                     let mut session_guard = client_session.lock().await;
                     if let Err(e) = session_guard.send_packet(&on_send_ping()).await {
-                        error!("Failed to send ping: {}", e);
+                        error!("Failed to send ping {}. Disconnecting connection with {}.",e, session_guard.ip);
+                        // TODO maybe add a way to reconnect. For now, just kill it.
+                        session_guard.close().await;
                     }
                 }
             }

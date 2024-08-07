@@ -3,7 +3,7 @@ use std::time::Duration;
 pub const ARGON_SALT: &[u8] = "strong salt and pepper lmao".as_bytes();
 pub const SERVER_IP: &str = "192.168.1.85";
 pub const LOGIN_PORT: i32 = 8484;
-pub const VERSION: i16 = 111;
+pub const VERSION: i16 = 95;
 pub const MINOR_VERSION: &str = "1";
 pub const LOCALE: u8 = 8;
 pub const DEFAULT_SIV: [u8;4] = [70,114,122,82];

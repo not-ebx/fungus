@@ -22,6 +22,7 @@ pub struct Character {
     created_at: NaiveDateTime, // Defaults at now()
 
     equipped_inventory: Inventory<Equipment>,
+
     equip_inventory: Inventory<Equipment>,
     consume_inventory: Inventory<Item>,
     etc_inventory: Inventory<Item>,
@@ -41,8 +42,10 @@ impl Encodable for Character {
         for _ in 0..3 {
             out_packet.write_long(0);
         }
+
         out_packet.write(&self.character_stats);
         out_packet.write(&self.avatar_look);
+
     }
 }
 

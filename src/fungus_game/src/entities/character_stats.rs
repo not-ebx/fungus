@@ -89,46 +89,12 @@ impl Encodable for CharacterStats {
         // Add things like Map ID location, check what is the 'unseen equips' thing too.
         // Ah, and complete this packet lol
         out_packet.write_int(self.exp as i32);
-        out_packet.write_int(self.pop);
+        out_packet.write_short(self.pop as i16);
         out_packet.write_int(0); // Gach exp.
         out_packet.write_int(self.map_id as i32);
         out_packet.write_byte(self.portal as u8);
-        out_packet.write_int(0); // Online time in seconds (?)
+        out_packet.write_int(0); // nPlaytime (?)
         out_packet.write_short(self.sub_job as i16);
-
-        // Here we check if it's demon, but we won't do that now.
-        // if demon
-        //encode int (demon face acc id)
-
-        out_packet.write_byte(self.fatigue as u8);
-        out_packet.write_int(0); // TODO Fatigue update; should be int
-
-        out_packet.write_int(self.charm_exp);
-        out_packet.write_int(self.insight_exp);
-        out_packet.write_int(self.willpower_exp);
-        out_packet.write_int(self.craft_exp);
-        out_packet.write_int(self.diligence_exp); // Unsure
-        out_packet.write_int(self.empathy_exp); // Unsure
-        //out_packet.write_int(self.ambition_exp); // Unsure
-
-        // Traits daily limits. TODO
-        out_packet.write_short(0);
-        out_packet.write_short(0);
-        out_packet.write_short(0);
-        out_packet.write_short(0);
-        out_packet.write_short(0);
-        out_packet.write_short(0);
-
-        // PVP Stuff.
-        out_packet.write_int(self.pvp_exp);
-        out_packet.write_byte(self.pvp_grade as u8);
-        out_packet.write_int(self.pvp_point);
-        out_packet.write_byte(5); // ?
-        out_packet.write_int(0);
-
-        // Last logout. TODO
-        out_packet.write_long(0);
-
     }
 }
 

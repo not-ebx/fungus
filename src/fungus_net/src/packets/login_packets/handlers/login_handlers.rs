@@ -3,13 +3,15 @@ use fungus_game::entities::character::Character;
 use crate::session::client_session::ClientSession;
 use fungus_game::entities::user::User;
 use fungus_game::errors::service_errors::ServiceError;
+use fungus_game::game_data::game_info::job_races::JobRace;
+use fungus_game::game_data::game_info::job_utilities::JobIdentifier;
 use fungus_packet_utils::in_packet::InPacket;
 use fungus_packet_utils::out_packet::OutPacket;
 use fungus_packet_utils::packet_errors::PacketError;
 use fungus_utils::enums::character_id_result::CharacterIDResult;
 use fungus_utils::enums::login_type::LoginType;
 use fungus_utils::enums::server_status::ServerStatus;
-use crate::packets::login_packets::login_packets::{on_check_duplicated_id_result, on_check_password_result, on_create_new_character_result, on_select_world_result, on_send_account_info, on_send_recommended_world_message, on_send_world_information_end, on_send_world_status};
+use crate::packets::login_packets::login_packets::{on_check_duplicated_id_result, on_check_password_result, on_create_new_character_result, on_select_world_result, on_send_account_info, on_send_recommended_world_message, on_send_world_information_end, on_send_world_status, on_world_info};
 
 pub async fn handle_check_login_auth_info(
     session: &mut ClientSession,
@@ -71,13 +73,14 @@ pub async fn handle_check_login_auth_info(
 
 
 pub async fn handle_world_list_request(session: &mut ClientSession, in_packet: InPacket) -> Result<(), PacketError> {
-    let server_instance = session.server_instance.clone();
-    let worlds = server_instance.get_worlds();
+    let world_service = session.service_registry.get_world_service();
+    let channel_service = session.service_registry.get_channel_service();
+    let worlds = world_service.get_worlds();
 
-    for world in worlds.read().await.iter() {
-        let world_info_packet = OutPacket::from(world.get_info_as_packet().await);
+    for world in worlds.iter() {
+        let channels = channel_service.get_world_channels(world.id);
         session.send_packet(
-            &world_info_packet
+            &on_world_info(world, channels)
         ).await?;
     }
     session.send_packet(
@@ -93,13 +96,8 @@ pub async fn handle_world_list_request(session: &mut ClientSession, in_packet: I
 
 pub async fn handle_world_status_request(session: &mut ClientSession, in_packet: &mut InPacket) -> Result<(), PacketError>{
     let world_id: i32 = in_packet.read_byte()? as i32;
-
-    let world_search = {
-        let server_instance = session.server_instance.clone();
-        let worlds_lock = server_instance.get_worlds();
-        let worlds = worlds_lock.read().await;
-        worlds.iter().find(|&w| w.id == world_id).cloned()
-    };
+    let world_service = session.service_registry.get_world_service();
+    let world_search = world_service.get_world(world_id);
 
     let world_status = match world_search {
         None => {
@@ -128,7 +126,7 @@ pub async fn handle_select_world(session: &mut ClientSession, in_packet: &mut In
         let user = session.user.as_mut().unwrap();
         let account = account_service.get_account(user.id, world_id as i16).await;
         if let Err(_) = account {
-            return Err(PacketError::CommunicationError())
+            return Err(PacketError::CommunicationError)
         }
         session.account = Some(account.unwrap());
         session.world_id = world_id as i16;
@@ -176,41 +174,65 @@ pub async fn handle_check_duplicate_id(session: &mut ClientSession, in_packet: &
 
 pub async fn handle_create_new_character(session: &mut ClientSession, in_packet: &mut InPacket) -> Result<(), PacketError> {
     let character_name = in_packet.read_string()?.to_string();
-    let job = in_packet.read_int()?;
+    let race = in_packet.read_int()?;
     let sub_job = in_packet.read_short()?;
-    let gender = in_packet.read_byte()?;
-    let skin = in_packet.read_byte()?;
-    let item_len = in_packet.read_byte()?;
-
-    let mut items = Vec::with_capacity((item_len - 2) as usize);
-
     let face = in_packet.read_int()?;
     let hair = in_packet.read_int()?;
+    let hair_color = in_packet.read_int()?;
+    let skin = in_packet.read_int()?;
 
-    for _ in 0..item_len-2 {
-        let item_id = in_packet.read_int()?;
-        items.push(item_id);
-    }
+    let coat = in_packet.read_int()?;
+    let pants = in_packet.read_int()?;
+    let shoes = in_packet.read_int()?;
+    let weapon = in_packet.read_int()?;
 
-    // TODO check if the items, face, skin etc are allowed. Meaning, they are in the starting items and are valid values
+    let mut items = vec![
+        coat,
+        pants,
+        shoes,
+        weapon
+    ];
+    items.retain(|&item| item > 0);
 
-    // TODO check if the name is valid, ever after choosing it
+    let gender = in_packet.read_byte()?;
 
-    // TODO check all races and stuff
+    let job = JobIdentifier::from(JobRace::from(race));
     let new_character = session.service_registry.get_character_service().create_character(
         session.service_registry.get_game_data_service(),
         session.get_account_id(),
         character_name.as_str(),
-        job,
+        job as i32,
         sub_job,
         gender,
         skin as i32,
         face,
-        hair,
+        hair + hair_color,
         items
     ).await.expect("What");
 
     session.send_packet(
         &on_create_new_character_result(new_character).await
     ).await
+}
+
+pub async fn handle_char_select_no_pic(session: &mut ClientSession, in_packet: &mut InPacket) -> Result<(), PacketError> {
+    let character_id = in_packet.read_int()?;
+    let mac = in_packet.read_string()?;
+    let _ = in_packet.read_string()?;
+
+
+    // TODO if this fails, send error packet and return to login.
+    let character_result = {
+        let chara_service = session.service_registry.get_character_service();
+        chara_service.get_character(character_id).await
+    };
+
+    if character_result.is_err() {
+        Err::<(), PacketError>(PacketError::InvalidSession); // TODO Handle this correctly
+    }
+
+    let selected_character = character_result.unwrap();
+    session.set_current_character(selected_character.id);
+
+    Ok(())
 }

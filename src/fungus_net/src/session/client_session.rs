@@ -19,7 +19,7 @@ use fungus_packet_utils::in_packet::InPacket;
 use fungus_packet_utils::out_packet::OutPacket;
 use fungus_packet_utils::packet_errors::PacketError;
 use fungus_utils::constants::server_constants::{DEFAULT_RIV, DEFAULT_SIV};
-use fungus_world::channel::Channel;
+use fungus_game::world::channel::Channel;
 use crate::channels::client_channel::ClientChannel;
 use crate::packets::login_packets::login_packets::on_send_connect;
 use crate::packets::operation_handler::handle_packet;
@@ -39,6 +39,9 @@ pub struct ClientSession {
     pub account: Option<Account>,
     pub character: Option<Character>,
     pub world_id: i16,
+    pub channel_id: i16,
+    pub character_id: i32,
+
 
     // Services
     pub service_registry: Arc<ServiceRegistry>,
@@ -60,6 +63,8 @@ impl ClientSession {
             client_channel,
             sender,
             world_id: -1,
+            channel_id: -1,
+            character_id: -1,
             packet_encoder: Mutex::from(PacketCoder::default()),
             user: None,
             account: None,
@@ -68,6 +73,10 @@ impl ClientSession {
             service_registry,
             server_instance
         }
+    }
+
+    pub fn set_current_character(&mut self, character_id: i32) {
+        self.character_id = character_id;
     }
 
     pub async fn send_handshake(&mut self) -> Result<(), PacketError> {
@@ -79,7 +88,7 @@ impl ClientSession {
             ).as_bytes()
         ).await.is_err() {
             error!("Channel send error, likely receiver has dropped.");
-            return Err(PacketError::CommunicationError());
+            return Err(PacketError::CommunicationError);
         }
         Ok(())
     }
@@ -89,8 +98,8 @@ impl ClientSession {
             self.packet_encoder.lock().await.encode(&out_packet)
         };
         if self.sender.send(encoded_packet).await.is_err() {
-            error!("Channel send error, likely receiver has dropped.");
-            return Err(PacketError::CommunicationError());
+            error!("Channel send error, likely receiver has dropped. Closing connection with {}", self.ip);
+            return Err(PacketError::CommunicationError);
         }
         Ok(())
     }
